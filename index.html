@@ -1767,24 +1767,27 @@ function rock(x,m,cx,cy,R,ax,ay,al){var ca=Math.cos(ay),sa=Math.sin(ay),cb=Math.
  requestAnimationFrame(frame)})();
 setInterval(tick,250);tick();
 /* Ask Maya: the founder's assistant, answering from live portal data */
-var MAYAM=[];
+var MAYAM=[],MAYAFREE=true;
+function mayaClaude(t){var p="Maya, "+t+"\n\n(From the RPS portal. Use the Supabase connector, project rcnvbrpoheefipuaxlmx, for live data.)";
+ window.open("https://claude.ai/new?q="+encodeURIComponent(p),"_blank","noopener")}
 function mayaToggle(){var b=$("mayaBox"),open=b.hidden;b.hidden=!open;$("mayaFab").hidden=open;if(open){if(!MAYAM.length)mayaRender();setTimeout(function(){$("mayaIn").focus()},50)}else $("mayaFab").focus()}
 function mayaFmt(t){var lines=esc(t).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").split("\n"),out="",ul=false;
  lines.forEach(function(l){var m=l.match(/^\s*[-•*]\s+(.*)/);if(m){if(!ul){out+="<ul>";ul=true}out+="<li>"+m[1]+"</li>"}else{if(ul){out+="</ul>";ul=false}out+=l?l+"<br>":"<br>"}});
  return (ul?out+"</ul>":out).replace(/(<br>)+$/,"")}
 function mayaRender(busy){var L=$("mayaLog");
- L.innerHTML=(MAYAM.length?"":"<div class='mb-m a'>Hi "+esc(String((U[me]&&U[me].name)||"Bruce").split(" ")[0])+", I’m Maya. Ask me about leads, the pipeline, your team or follow-ups. I can also assign a lead or add a follow-up for you.</div><div class=mb-sug>"+
+ L.innerHTML=(MAYAM.length?"":"<div class='mb-m a'>Hi "+esc(String((U[me]&&U[me].name)||"Bruce").split(" ")[0])+", I’m Maya. Ask me anything about leads, the pipeline, your team or follow-ups. I’ll open Claude in a new tab with your question and answer there, free on your Claude plan.</div><div class=mb-sug>"+
   ["How many new leads came today?","Who hasn’t filed today’s work report?","Show overdue follow-ups","Verified leads in Bengaluru with no caller"].map(function(s){return"<button type=button onclick='mayaAsk(this.textContent)'>"+s+"</button>"}).join("")+"</div>")+
   MAYAM.map(function(m){return"<div class='mb-m "+(m.err?"e":m.role=="user"?"u":"a")+"'>"+(m.role=="user"?esc(m.content).replace(/\n/g,"<br>"):mayaFmt(m.content))+"</div>"}).join("")+
   (busy?"<div class='mb-m a mb-dots' aria-label='Maya is thinking'><i></i><i></i><i></i></div>":"");
  L.scrollTop=L.scrollHeight}
 function mayaAsk(t){$("mayaIn").value=t;mayaSend()}
 async function mayaSend(ev){if(ev)ev.preventDefault();var i=$("mayaIn"),t=i.value.trim();if(!t||$("mayaGo").disabled)return;i.value="";
- MAYAM.push({role:"user",content:t});$("mayaGo").disabled=true;mayaRender(true);
+ MAYAM.push({role:"user",content:t});
+ if(MAYAFREE){mayaClaude(t);MAYAM.push({role:"assistant",content:"Opened **Claude** in a new tab with your question. I’ll answer there with live portal data, free on your Claude plan."});mayaRender();i.focus();return}$("mayaGo").disabled=true;mayaRender(true);
  try{var r=await SB.functions.invoke("maya-chat",{body:{messages:MAYAM.filter(function(m){return!m.err}).map(function(m){return{role:m.role,content:m.content}})}});
   if(r.error){var m=r.error.message;try{var j=await r.error.context.json();if(j&&j.error)m=j.error}catch(x){}throw new Error(m)}
   var d=r.data||{};
-  if(d.error=="key_missing")MAYAM.push({role:"assistant",err:1,content:"I’m not switched on in the portal yet. Add the **ANTHROPIC_API_KEY** secret in Supabase (Edge Functions → Secrets), then ask me again."});
+  if(d.error=="key_missing"){MAYAFREE=true;mayaClaude(t);MAYAM.push({role:"assistant",content:"Opened **Claude** in a new tab with your question. I’ll answer there with live portal data."})}
   else if(d.error=="key_invalid")MAYAM.push({role:"assistant",err:1,content:"The Claude API key in Supabase isn’t working. Check the **ANTHROPIC_API_KEY** secret."});
   else if(d.error)MAYAM.push({role:"assistant",err:1,content:d.error});
   else MAYAM.push({role:"assistant",content:d.reply});
@@ -1804,7 +1807,7 @@ document.addEventListener("keydown",function(e){if(e.target&&e.target.id=="mayaI
 </script>
 <button type="button" id="mayaFab" class="maya-fab" hidden onclick="mayaToggle()" aria-label="Ask Maya, your assistant"><span class="maya-av">M</span><b>Ask Maya</b></button>
 <div id="mayaBox" class="maya-box" hidden role="dialog" aria-label="Ask Maya">
- <div class="mb-h"><span class="maya-av">M</span><div><b>Maya</b><small>Your assistant · live portal data</small></div><button type="button" class="mb-x" onclick="mayaToggle()" aria-label="Close Maya">✕</button></div>
+ <div class="mb-h"><span class="maya-av">M</span><div><b>Maya</b><small>Your assistant · answers in Claude</small></div><button type="button" class="mb-x" onclick="mayaToggle()" aria-label="Close Maya">✕</button></div>
  <div class="mb-log" id="mayaLog" aria-live="polite"></div>
  <form class="mb-in" onsubmit="mayaSend(event)"><textarea id="mayaIn" rows="1" maxlength="2000" placeholder="Ask Maya…" aria-label="Message Maya"></textarea><button class="btn s" id="mayaGo">Send</button></form>
 </div>
