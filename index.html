@@ -560,7 +560,7 @@ async function pipe(){seg("sp_seg",function(p){PER=p;pipe()});var P=period(),m=$
 
 /* Maya, the lead finder: her latest run and a live flow of where her leads are now */
 function istDay(){return new Date(Date.now()+330*6e4).toISOString().slice(0,10)}
-var MAYA=[["found","Maya found","c-fire","S.goStage('')","leads found"],["desk","Checking","c-amber","S.goVer('verification_pending')","need a phone or check"],
+var MAYA=[["found","Maya found","c-fire","S.goStage('')",""],["desk","Checking","c-amber","S.goVer('verification_pending')","need a phone or check"],
  ["verified","Ready to call","c-mint","S.goVer('verified')","verified, waiting for a caller"],["calling","Calling","c-cyan","S.goStage('ready_to_call')","being called"],
  ["interested","Interested","c-violet","S.goStage('interested')","want to talk"],["proposal","Proposal","c-ion","S.goStage('proposal_draft')","research to proposal"],
  ["won","Won","c-mint","S.goStage('converted')","became clients"]];
@@ -571,7 +571,7 @@ async function engine(){if(!FOUND&&!own(["department_head"])){$("sp_eng").hidden
    :hr<8?"Maya starts at 6:11 AM. Today’s leads will be here by 8 AM.":"No leads from Maya yet today. She runs every morning at 6:11 AM.";
   var later=function(i){return MAYA.slice(i).some(function(s){return f[s[0]]>0})};
   var nodes=MAYA.map(function(s,i){var n=f[s[0]]||0;return(i?"<div class='mf-ar"+(later(i)?" on":"")+"' aria-hidden=true><i></i><i></i><i></i></div>":"")+
-   "<button type=button class='mf-nd "+s[2]+(n?"":" zero")+"' onclick=\""+s[3]+"\" title='"+esc(s[4])+"'><b>"+n+"</b><span>"+s[1]+"</span><small>"+s[4]+"</small></button>"}).join("");
+   "<button type=button class='mf-nd "+s[2]+(n?"":" zero")+"' onclick=\""+s[3]+"\" title='"+esc(s[4]||s[1])+"'><b>"+n+"</b><span>"+s[1]+"</span>"+(s[4]?"<small>"+s[4]+"</small>":"")+"</button>"}).join("");
   $("sp_engb").innerHTML="<p class=maya-st>"+status+"</p><div class=mf role=list aria-label='Where Maya’s leads are now'>"+nodes+"</div>"+
    "<div class=maya-ft>"+(f.cities&&f.cities.length?f.cities.map(function(c){return"<span class='tag c-ion'>"+esc(c[0])+" · "+c[1]+"</span>"}).join(""):"")+
    (f.dropped?"<span class='tag c-amber'>"+f.dropped+" closed or not a fit</span>":"")+"<span class=sm>Counts are leads Maya found in this period, by where they are now. Tap a step to open it.</span></div>"}
