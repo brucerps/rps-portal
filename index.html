@@ -381,6 +381,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--ion);outline-offset
  <section class="sec" id="spipe">
   <div class="ttl-r" style="align-items:center"><div class="seg" id="sp_seg"><button data-p="today">Today</button><button data-p="week">This week</button><button data-p="month" class="on">This month</button><button data-p="quarter">This quarter</button></div><button class="btn g s" onclick="S.refresh()">Refresh</button></div>
   <div class="grid" id="sp_stats"></div>
+  <div class="card" id="sp_eng" hidden><div class="ttl-r"><div><span class="mono">_ Automatic · every morning 07:00–09:00</span><h3>Lead robot.</h3></div><button class="btn g s" id="sp_run" onclick="S.runEngine()">Run now</button></div><div id="sp_engb"></div></div>
   <div class="two">
    <div class="card" style="min-width:0"><span class="mono">_ Funnel</span><h3>Where the leads are.</h3><div id="sp_funnel"></div></div>
    <div class="card" style="min-width:0"><span class="mono">_ Right now</span><h3>Pipeline by stage.</h3><div class="list" id="sp_stages"></div></div>
@@ -499,11 +500,31 @@ async function pipe(){seg("sp_seg",function(p){PER=p;pipe()});var P=period(),m=$
   var f=await q(sb().rpc("report_funnel",{p_from:P[0],p_to:P[1]})),fm={};f.forEach(function(r){fm[r.stage]=+r.leads});
   var order=[["created","Added"],["verified","Verified"],["called","Called"],["interested","Interested"],["discovery","Met"],["hot","Hot"],["proposal","Proposal sent"],["converted","Won"],["lost","Lost"]],mx=Math.max.apply(null,order.map(function(o){return fm[o[0]]||0}).concat([1]));
   $("sp_funnel").innerHTML=order.map(function(o,i){var n=fm[o[0]]||0;return"<div style='margin:0 0 10px'><div style='display:flex;justify-content:space-between;font-size:14px'><span>"+o[1]+"</span><b class=mono>"+n+"</b></div><div class=bar><i style='width:"+Math.round(n/mx*100)+"%;--c:var("+(o[0]=="lost"?"--c-fire":o[0]=="converted"?"--c-mint":"--c-ion")+")'></i></div></div>"}).join("");
+  engine();
   try{var t=await q(sb().rpc("report_employee_performance",{p_from:P[0],p_to:P[1]}));
    t=t.filter(function(r){return r.verified||r.calls||r.interested||r.meetings_completed||r.proposals_presented||r.converted||r.overdue_tasks});
    $("sp_team").innerHTML=t.map(function(r){return"<tr><td>"+esc(r.full_name)+"</td><td class=n>"+r.verified+"</td><td class=n>"+r.calls+"</td><td class=n>"+r.connected+"</td><td class=n>"+r.interested+"</td><td class=n>"+r.meetings_completed+"</td><td class=n>"+r.proposals_presented+"</td><td class=n>"+r.converted+"</td><td class=n"+(r.overdue_tasks?" style='color:var(--bad)'":"")+">"+r.overdue_tasks+"</td></tr>"}).join("")||"<tr><td colspan=9 class=sm>No sales activity in this period yet.</td></tr>"}
   catch(e){$("sp_team").innerHTML="<tr><td colspan=9 class=sm>"+esc(err(e))+"</td></tr>"}}
  catch(e){m.style.color="var(--bad)";m.textContent=err(e)}}
+
+/* the daily lead robot: today's progress, and a manual run for the founder */
+function istDay(){return new Date(Date.now()+330*6e4).toISOString().slice(0,10)}
+async function engine(){if(!FOUND){$("sp_eng").hidden=true;return}$("sp_eng").hidden=false;var d=istDay();
+ try{var runs=await q(sb().from("lead_engine_runs").select("batch_no,region,status,added,candidates,error").eq("run_date",d).order("batch_no"));
+  var rep=(await q(sb().from("lead_engine_reports").select("*").eq("run_date",d)))[0],cfg=(await q(sb().from("lead_engine_config").select("daily_target,report_email,active")))[0]||{daily_target:30};
+  var added=runs.reduce(function(s,r){return s+(r.added||0)},0),seen=runs.reduce(function(s,r){return s+(r.candidates||0)},0);
+  $("sp_engb").innerHTML="<div class=kvs><div class=kv><span class=mono>Today</span><b>"+added+" / "+cfg.daily_target+" leads added · "+Math.max(0,seen-added)+" thrown out by the checks</b></div>"+
+   "<div class=kv><span class=mono>Email</span><b>"+(rep&&rep.emailed_at?"Sent to "+esc(cfg.report_email)+" at "+tm(rep.emailed_at):rep&&rep.email_error?"<span style='color:var(--bad)'>Not sent: "+esc(rep.email_error)+"</span>":"Goes to "+esc(cfg.report_email||"")+" by 9:15")+"</b></div></div>"+
+   (runs.length?"<div class=list style='margin-top:8px'>"+runs.map(function(r){return"<p><span class=mono>"+(r.batch_no>=100?"Top-up":"Batch "+r.batch_no)+"</span><span style='flex:1'>"+esc(r.region)+(r.error?" · <span style='color:var(--bad)'>"+esc(r.error.slice(0,140))+"</span>":"")+"</span><span class='tag "+(r.status=="done"?"c-mint":r.status=="failed"?"c-fire":"c-amber")+"'>"+(r.status=="done"?r.added+" added":r.status)+"</span></p>"}).join("")+"</div>"
+    :"<p class=note style='margin-top:8px'>"+(cfg.active===false?"The robot is switched off.":"Today’s run hasn’t started yet. It starts at 7:00 AM, or press Run now.")+"</p>")}
+ catch(e){$("sp_engb").innerHTML=empty(esc(err(e)))}}
+async function runEngine(){var b=$("sp_run");b.disabled=true;
+ try{for(var i=0;i<16;i++){b.textContent="Running… batch "+(i+1);var r=await sb().functions.invoke("lead-engine",{body:{force:true}});
+   if(r.error){var m=r.error.message;try{var j=await r.error.context.json();if(j&&j.error)m=j.error}catch(x){}throw new Error(m)}
+   engine();if(r.data&&(r.data.report||r.data.done||r.data.idle))break}
+  toast("Lead robot finished","Today’s leads are on the verification desk and with your telecallers.",function(){show("sleads")},"c-mint")}
+ catch(e){toast("Lead robot stopped",/Failed to send|FunctionsFetchError|404|not found/i.test(String(e.message))?"The lead robot isn’t switched on in Supabase yet.":err(e),null,"c-fire")}
+ b.disabled=false;b.textContent="Run now";engine();pipe()}
 
 /* ---------- calling queue (telecaller / sales) ---------- */
 async function call(){var L=$("sc_list");try{var rows=await q(sb().rpc("calling_queue"));
@@ -749,7 +770,7 @@ function start(){clearInterval(TIMER);TIMER=setInterval(function(){if(document.h
 function stop(){clearInterval(TIMER);STAFF=[];SRC=[];LEADS=[];close()}
 function roleBoxes(){return ROLES.filter(function(r){return FOUND||["admin","hr"].indexOf(r[0])<0}).map(function(r){return"<label class=chk style='margin:0'><input type=checkbox data-r='"+r[0]+"'> "+r[1]+"</label>"}).join("")}
 document.addEventListener("keydown",function(e){if(e.key=="Escape"&&$("lp")&&!$("lp").hidden&&$("mdl").hidden)close()});
-return{nav:nav,R:RN,err:err,roleBoxes:roleBoxes,refresh:refresh,start:start,stop:stop,draw:draw,goStage:goStage,addForm:addForm,add:add,importForm:importForm,promote:promote,open:open,close:close,
+return{nav:nav,R:RN,err:err,roleBoxes:roleBoxes,runEngine:runEngine,refresh:refresh,start:start,stop:stop,draw:draw,goStage:goStage,addForm:addForm,add:add,importForm:importForm,promote:promote,open:open,close:close,
  outcome:outcome,verify:verify,handoff:handoff,note:note,fup:fup,fdone:fdone,fdoneL:fdoneL,stage:stage,lose:lose,assign:assign,meet:meet,met:met,score:score,saveRoles:saveRoles}})();
 
 </script>

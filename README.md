@@ -20,6 +20,12 @@ The Rock Papers Scissors employee portal: attendance, leaves, tasks, payslips an
   - telecaller and sales: Calling queue and Follow-ups
   - founder and department heads: Sales pipeline
   - HR: Sales access
+- **Lead robot (`supabase/functions/lead-engine`):** every morning from 07:00 to 09:00 IST it does the following.
+  - It finds requirement leads across KA, TN, TS, AP and KL (half from Bengaluru) with Claude web search. These are businesses that are hiring marketing people, launching, freshly funded or asking for an agency.
+  - It checks each lead in code: the proof page loads and names the business, the signal is under 45 days old, the business is in scope, there's a business phone or email, it isn't an agency, and it isn't already in the CRM.
+  - It adds the leads that pass as verified and hands them to telecallers.
+  - It emails the founder by 9:15.
+  - Settings live in `lead_engine_config`. It needs the `ANTHROPIC_API_KEY` and `RESEND_API_KEY` secrets.
 - **Invites:** `supabase/functions/invite-employee` runs on Supabase. It checks the caller is HR or the founder, then sends the invite.
 
 The publishable key in `index.html` is public by design. Without a signed-in employee it can read nothing.
