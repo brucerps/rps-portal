@@ -18,14 +18,27 @@ Deno.serve(async (req) => {
   const email = String(b.email ?? "").trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return reply(400, { error: "Enter your work email." });
   const svc = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || pick("SUPABASE_SECRET_KEYS")!, { auth: { persistSession: false } });
-  const emp = (await svc.from("profiles").select("full_name,email").eq("active", true).ilike("email", email).maybeSingle()).data;
+  const emp = (await svc.from("profiles").select("id,full_name,email,employee_code").eq("active", true).ilike("email", email).maybeSingle()).data;
   if (!emp) return reply(200, SAME);
-  const recent = (await svc.from("email_outbox").select("id", { count: "exact", head: true }).eq("kind", "reset").eq("to_email", email)
+  const recent = (await svc.from("email_outbox").select("id", { count: "exact", head: true }).in("kind", ["reset", "welcome"]).eq("to_email", email)
     .gte("created_at", new Date(Date.now() - 5 * 60000).toISOString())).count ?? 0;
   if (recent > 0) return reply(200, SAME);
   const gl = await svc.auth.admin.generateLink({ type: "recovery", email, options: { redirectTo: PORTAL } });
   const link = gl.data?.properties?.action_link;
   if (!link) return reply(200, SAME);
+  // never signed in yet: send the welcome email again (founder in CC) instead of a "reset" email
+  const u = (await svc.auth.admin.getUserById(emp.id)).data?.user;
+  if (u && !u.last_sign_in_at) {
+    const founders: string[] = ((await svc.rpc("founder_emails")).data ?? []).filter((f: string) => f !== email);
+    const roles = ((await svc.from("employee_roles").select("role:roles(display_name)").eq("employee_id", emp.id)).data ?? []).map((r: any) => r.role?.display_name).filter(Boolean).sort().join(", ") || "Employee (dashboard, tasks, payslip)";
+    await svc.from("email_outbox").insert({ kind: "welcome", to_email: email, cc: founders, subject: "Welcome to Rock Papers Scissors: set up your portal login",
+      html: `<p>Hi ${esc(String(emp.full_name ?? "").split(" ")[0])},</p><p>Welcome to Rock Papers Scissors. Your employee portal account is ready.</p>
+<ul><li>Employee ID: <b>${esc(emp.employee_code)}</b></li><li>Work email: <b>${esc(email)}</b></li><li>Access: <b>${esc(roles)}</b></li></ul>
+<p><a href="${esc(link)}" style="background:#BD1911;color:#fff;padding:10px 16px;border-radius:999px;text-decoration:none">Set your password</a></p>
+<p style="color:#666">This link works once and expires soon. If it has expired, open the portal and use “Forgot password?”.</p>
+<p>Every day: write your plan when you sign in, and your work report before you sign out.</p><p>Rock Papers Scissors HR</p>` });
+    return reply(200, SAME);
+  }
   await svc.from("email_outbox").insert({ kind: "reset", to_email: email, subject: "Reset your RPS portal password",
     html: `<p>Hi ${esc(String(emp.full_name ?? "").split(" ")[0])},</p><p>Someone asked to reset your Rock Papers Scissors portal password. If it was you:</p>
 <p><a href="${esc(link)}" style="background:#BD1911;color:#fff;padding:10px 16px;border-radius:999px;text-decoration:none">Choose a new password</a></p>
