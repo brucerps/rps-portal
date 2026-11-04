@@ -40,6 +40,8 @@ Deno.serve(async (req) => {
   if (!admin && roles.some((r) => r === "admin" || r === "hr")) return reply(403, { error: "Only the founder can give admin or HR access." });
 
   const svc = createClient(url, service, { auth: { persistSession: false } });
+  // someone removed before they ever signed in frees their Employee ID and email
+  await svc.rpc("purge_unused_employee", { p_code: code, p_email: email });
   const taken = await svc.from("profiles").select("id").ilike("employee_code", code).maybeSingle();
   if (taken.data) return reply(409, { error: `Employee ID ${code} is already in use.` });
 
