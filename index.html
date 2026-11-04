@@ -211,6 +211,10 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--ion);outline-offset
 .chg{font-size:13px;color:var(--soft)}.chg b{color:var(--white);font-weight:600}
 .ttl-r{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .ttl-r h3{margin:0}
+.subtabs{margin:-6px 0 18px}.subtabs button{font-size:13.5px}
+.av img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
+.phbox{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;margin:6px 0 14px}
+.addnew{margin-top:-6px}.addnew[hidden]{display:none}
 .chart svg{width:100%;height:auto;display:block}
 .leg{display:flex;gap:14px;flex-wrap:wrap;font:500 11px var(--mono);color:var(--dust);margin-top:8px}.leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
 .ovr{padding:9px 0;border-bottom:1px dashed var(--line);font-size:14px;overflow-wrap:anywhere}.ovr:last-child{border:0}.ovr>.od{float:right;font:500 11px var(--mono)}
@@ -318,6 +322,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--ion);outline-offset
    <div class="vc"><div style="display:flex;justify-content:space-between;gap:10px"><div><h3 id="v_n"></h3><small id="v_r" style="color:var(--fire);font-weight:600"></small></div><div class="logo" style="font-size:13px"><b>rock</b><em>·</em><span>papers</span><em>·</em><b>scissors</b></div></div>
     <div style="font-size:13px;line-height:1.65;color:var(--soft)"><b style="color:var(--white)">Rock Papers Scissors</b><br>☎ <span id="v_ph"></span><br>✉ <span id="v_em"></span><br><span id="v_ad"></span></div></div>
   </div>
+  <div class="phbox" id="ph_box" hidden><input type="file" id="ph_in" accept="image/*" hidden onchange="phPick(this)"><button class="btn s" onclick="$('ph_in').click()">Upload your photo <span class="ar">↑</span></button><button class="btn g s" id="ph_rm" hidden onclick="phRemove()">Remove photo</button><span class="sm" id="ph_msg">Your photo goes on your ID card (the one you wear). The visiting card stays as it is.</span></div>
   <p class="note" id="cnote">Details on these cards are managed by HR. Spot a mistake? Ask HR to correct it.</p></div></section>
 
  <!-- FOUNDER: overview -->
@@ -417,9 +422,15 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--ion);outline-offset
   <div class="card"><div class="ttl-r"><div><span class="mono">_ Nothing slips</span><h3>Your follow-ups.</h3></div><div class="seg" id="sf_seg"><button data-f="due" class="on">Due</button><button data-f="all">All open</button><button data-f="done">Done this week</button></div></div><div id="sf_list"></div></div>
  </section>
 
+ <section class="sec" id="steam">
+  <div class="grid" id="st_stats"></div>
+  <div class="card"><div class="ttl-r"><div><span class="mono">_ Across the team</span><h3>Team follow-ups.</h3></div><div class="seg" id="st_seg"><button data-f="overdue" class="on">Overdue</button><button data-f="today">Due today</button><button data-f="all">All open</button></div></div>
+   <div class="f2" style="grid-template-columns:1fr 2fr"><div><label for="st_who">Person</label><select id="st_who" onchange="S.teamDraw()"></select></div></div><div id="st_list"></div></div>
+ </section>
+
  <section class="sec" id="haccess">
-  <div class="card"><div class="ttl-r"><div><span class="mono">_ Who can do what</span><h3>Sales access.</h3></div><button class="btn g s" onclick="S.refresh()">Refresh</button></div>
-   <p class="note" style="margin-bottom:14px">Tick what each person does. They see the matching sales screens the next time they open the portal. Only the founder can give Admin or HR.</p>
+  <div class="card"><div class="ttl-r"><div><span class="mono">_ Who can do what</span><h3>Access.</h3></div><button class="btn g s" onclick="S.refresh()">Refresh</button></div>
+   <p class="note" style="margin-bottom:14px">The founder and HR decide what each person can open. Tick what each person does; they see the matching screens the next time they open the portal. Only the founder can give Admin or HR.</p>
    <div class="tw"><table><thead><tr><th>Employee</th><th>ID</th><th>Access</th><th></th></tr></thead><tbody id="ha_tb"></tbody></table></div><p class="msg" id="ha_msg"></p></div>
  </section>
 </main></div>
@@ -446,9 +457,27 @@ var ST={raw:["Raw","c-ion"],verification_pending:["To verify","c-amber"],verific
  proposal_presented:["Proposal sent","c-cyan"],revision:["Revision","c-amber"],negotiation:["Negotiation","c-amber"],pending_decision:["Decision pending","c-amber"],
  converted:["Won","c-mint"],closed_lost:["Lost","c-fire"],invalid:["Invalid","c-fire"],suppressed:["Do not contact","c-fire"]};
 var LOST=[["price","Price"],["competitor","Went with a competitor"],["internal_team","Doing it in-house"],["postponed","Postponed"],["no_budget","No budget"],["scope_mismatch","Scope mismatch"],["service_mismatch","Not a service we offer"],["no_decision","No decision / no response"],["business_closed","Business closed"],["other","Other"]];
+/* lists the founder, HR and department heads can extend ("+ Add new"): extra stages, loss reasons, follow-up types */
+var OPTS={stage:[],lost_reason:LOST.slice(),followup_type:[["follow_up","Follow up"],["callback","Call back"],["send_details","Send details / deck"],["whatsapp","WhatsApp"],["meeting_prep","Meeting prep"]]},OPTL=0;
+async function opts(force){if(!force&&Date.now()-OPTL<60000)return OPTS;try{var r=await q(sb().from("crm_options").select("kind,code,label,sort").eq("active",true).order("sort").order("label"));
+  var o={stage:[],lost_reason:[],followup_type:[]};r.forEach(function(x){if(o[x.kind])o[x.kind].push([x.code,x.label])});
+  if(o.lost_reason.length)OPTS.lost_reason=o.lost_reason;if(o.followup_type.length)OPTS.followup_type=o.followup_type;OPTS.stage=o.stage;OPTL=Date.now()}catch(e){}return OPTS}
+function canList(){return FOUND||HRM||own(["department_head"])}
+var KN={stage:"stage",lost_reason:"reason",followup_type:"type"};
+function pick(id,kind,list,cur,pre){return"<select id="+id+" onchange=\"S.addToggle('"+id+"')\">"+(pre||"")+opt(list,cur)+(canList()?"<option value='__new'>＋ Add a new "+KN[kind]+"…</option>":"")+"</select><input id="+id+"_new class=addnew hidden maxlength=60 placeholder='Name of the new "+KN[kind]+"'>"}
+function addToggle(id){var n=$(id+"_new");if(!n)return;n.hidden=$(id).value!="__new";if(!n.hidden)n.focus()}
+function slug(t){return t.toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,32)||"item"}
+/* returns the chosen code; when "+ Add new" was picked, saves the new item to the shared list first */
+async function picked(id,kind){var v=$(id).value;if(v!="__new")return v;var t=($(id+"_new").value||"").trim();
+ if(t.length<2)throw new Error("Type the name of the new "+KN[kind]+".");
+ var ex=OPTS[kind].filter(function(x){return x[1].toLowerCase()==t.toLowerCase()})[0];if(ex)return ex[0];
+ var code=slug(t);if(code.length<2)code="x_"+code;if(OPTS[kind].some(function(x){return x[0]==code}))code=(code+"_"+Date.now().toString(36).slice(-4)).slice(0,40);
+ await q(sb().from("crm_options").insert({kind:kind,code:code,label:t,created_by:SESS.id}));OPTS[kind].push([code,t]);OPTL=0;return code}
+function lbl(kind,code){var x=OPTS[kind].filter(function(o){return o[0]==code})[0];return x?x[1]:code}
+function tagC(code){return code?"<span class='tag c-violet'>"+esc(lbl("stage",code))+"</span>":""}
 var ROLES=[["lead_generation","Lead generation"],["verifier","Verifier"],["telecaller","Telecaller"],["sales","Sales"],["department_head","Department head"],["research","Research"],["strategy","Strategy"],["proposal","Proposals"],["finance","Finance"],["hr","HR"],["admin","Admin (founder)"]];
 var OUT=[["interested","Interested","c-mint"],["no_answer","No answer","c-amber"],["call_later","Call later","c-violet"],["dm_unavailable","Decision-maker away","c-ion"],["not_interested","Not interested","c-fire"],["wrong_number","Wrong number","c-fire"],["do_not_contact","Do not contact","c-fire"]];
-var LEADS=[],STAFF=[],SRC=[],FOL=[],PER="month",VF="verification_pending",FF="due",TIMER=null,OPEN=null;
+var LEADS=[],STAFF=[],SRC=[],FOL=[],TEAM=[],PER="month",VF="verification_pending",FF="due",TF="overdue",PST=null,TIMER=null,OPEN=null;
 function sb(){return SB}
 function R(){return SESS&&SESS.roles||[]}
 function has(r){return FOUND||R().indexOf(r)>=0}
@@ -479,7 +508,12 @@ function nav(){if(!SESS)return[];var L=[];
  if(FOUND||own(["verifier"]))L.push(["sver","Verification desk"]);
  if(FOUND||any(["lead_generation","verifier","telecaller","sales","department_head","research","strategy","proposal"]))L.push(["sleads","Leads"]);
  if(own(["telecaller","sales","department_head"]))L.push(["sfup","Follow-ups"]);
- if(HRM)L.push(["haccess","Sales access"]);return L}
+ if(HRM)L.push(["haccess","Access"]);
+ /* the founder and department heads reach verification and leads from tabs inside the Sales pipeline */
+ if(L.some(function(x){return x[0]=="spipe"}))L=L.filter(function(x){return x[0]!="sver"&&x[0]!="sleads"});return L}
+function tabs(){var T=[["spipe","Overview"]];if(FOUND||own(["verifier"]))T.push(["sver","Verification desk"]);
+ if(FOUND||any(["lead_generation","verifier","telecaller","sales","department_head","research","strategy","proposal"]))T.push(["sleads","Leads"]);
+ if(FOUND||own(["department_head"]))T.push(["steam","Team follow-ups"]);return T}
 
 async function staff(){if(!STAFF.length)STAFF=await q(sb().rpc("sales_staff"));return STAFF}
 async function sources(){if(!SRC.length)SRC=await q(sb().from("lead_sources").select("id,source_name").eq("active",true).order("source_name"));return SRC}
@@ -493,8 +527,8 @@ async function pipe(){seg("sp_seg",function(p){PER=p;pipe()});var P=period(),m=$
   var fresh=all.filter(function(l){return l.created_at>=P[0]&&l.created_at<P[1]}).length,
    open=all.filter(function(l){return["converted","closed_lost","invalid","suppressed","verification_rejected"].indexOf(l.status)<0}),
    val=open.reduce(function(s,l){return s+(+l.estimated_value||0)},0),won=all.filter(function(l){return l.status=="converted"}).length;
-  $("sp_stats").innerHTML=stat("c-ion","◎",fresh,"New leads in this period","show('sleads')")+stat("c-mint","✓",vt.verified_today+"<small>/ "+vt.target+"</small>","Verified today (team target)")+
-   stat("c-cyan","₹",val>=1e7?"₹"+(val/1e7).toFixed(1)+"Cr":val>=1e5?"₹"+(val/1e5).toFixed(1)+"L":inr(Math.round(val)),"Open pipeline value")+stat(od.count?"c-fire":"c-violet","!",od.count||0,"Overdue follow-ups across the team")+stat("c-amber","★",won,"Clients won (all time)");
+  $("sp_stats").innerHTML=stat("c-ion","◎",fresh,"New leads in this period","S.goStage('')")+stat("c-mint","✓",vt.verified_today+"<small>/ "+vt.target+"</small>","Verified today (team target) · open verified leads","S.goVer('verified')")+
+   stat("c-cyan","₹",val>=1e7?"₹"+(val/1e7).toFixed(1)+"Cr":val>=1e5?"₹"+(val/1e5).toFixed(1)+"L":inr(Math.round(val)),"Open pipeline value · "+open.length+" open leads","S.goStage('open')")+stat(od.count?"c-fire":"c-violet","!",od.count||0,"Overdue follow-ups across the team","S.goTeam('overdue')")+stat("c-amber","★",won,"Clients won (all time)","S.goStage('converted')");
   var c={};all.forEach(function(l){c[l.status]=(c[l.status]||0)+1});
   $("sp_stages").innerHTML=Object.keys(ST).filter(function(s){return c[s]}).map(function(s){return"<p><span class=mono>"+c[s]+"</span>"+tagS(s)+"<a href='#' style='margin-left:auto' class=sm onclick=\"event.preventDefault();S.goStage('"+s+"')\">Open →</a></p>"}).join("")||empty("No leads yet. Add the first one from Leads.");
   var f=await q(sb().rpc("report_funnel",{p_from:P[0],p_to:P[1]})),fm={};f.forEach(function(r){fm[r.stage]=+r.leads});
@@ -543,15 +577,15 @@ async function outcome(id,o){var notes=($("cn_"+id)||{}).value||"",m=$("cm_"+id)
   toast("Call saved",(ST[s]||[s])[0]+(o=="interested"?" · book the discovery meeting next":o=="no_answer"?" · the next try is scheduled":""),null,"c-mint");call();return true}
  if(o=="call_later"||o=="dm_unavailable"){ask({k:"_ Callback",t:"When should we call back?",ok:"Save callback",body:"<label for=m_in>Date and time</label><input id=m_in type=datetime-local value='"+localNow(24)+"'>",
   onOk:async function(){try{await go({p_callback_at:isoLocal($("m_in").value)})}catch(e){return err(e)}}});return}
- if(o=="not_interested"){ask({k:"_ Close as lost",t:"Why did they say no?",ok:"Close lead",body:"<label for=m_in>Reason</label><select id=m_in>"+opt(LOST)+"</select>",
-  onOk:async function(){try{await go({p_lost_reason:$("m_in").value})}catch(e){return err(e)}}});return}
+ if(o=="not_interested"){await opts();ask({k:"_ Close as lost",t:"Why did they say no?",ok:"Close lead",body:"<label for=m_r>Reason</label>"+pick("m_r","lost_reason",OPTS.lost_reason)+"<label for=m_in>Details (required)</label><textarea id=m_in rows=3>"+esc(notes)+"</textarea><p class=note>At least 5 words. The lead isn’t closed without them.</p>",
+  onOk:async function(){var t=$("m_in").value.trim();if(lostWords(t)<5||t.length<15)return"Write the details (at least 5 words).";try{var r=await picked("m_r","lost_reason");notes=t;await go({p_lost_reason:r})}catch(e){return err(e)}}});return}
  if(o=="do_not_contact"||o=="wrong_number"){ask({k:"_ Confirm",t:o=="do_not_contact"?"Add to the do-not-contact list?":"Mark the number as wrong?",ok:"Yes, save",
   body:"<p class=note>"+(o=="do_not_contact"?"Nobody at RPS will be able to call or message this contact again. Only the founder can undo this.":"The lead is closed as invalid. Add the right number first if you have it.")+"</p>",
   onOk:async function(){try{await go()}catch(e){return err(e)}}});return}
  try{m.textContent="Saving…";await go()}catch(e){m.style.color="var(--bad)";m.textContent=err(e)}}
 
 /* ---------- verification desk ---------- */
-async function ver(){seg("sv_seg",function(f){VF=f;ver()});var L=$("sv_list");
+async function ver(){seg("sv_seg",function(f){VF=f;ver()});$("sv_seg").querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.dataset.f==VF)});var L=$("sv_list");
  try{await staff();var rows=await q(sb().from("leads").select("id,lead_code,status,created_at,source_evidence_url,source_reference,contact_basis,service_interests,company:companies(name,website,domain,city,industry),contact:contacts(full_name,designation,phone_e164,email),source:lead_sources(source_name)").eq("status",VF).order("created_at").limit(50));
   var vt=(await q(sb().rpc("verified_today_total")))[0]||{verified_today:0,target:30},pend=await sb().from("leads").select("id",{count:"exact",head:true}).eq("status","verification_pending");
   $("sv_stats").innerHTML=stat("c-amber","?",pend.count||0,"Waiting to check")+"<div class='card stat c-mint'><div class=ic>✓</div><b>"+vt.verified_today+"<small>/ "+vt.target+"</small></b><span>Verified today · team target</span><div class=bar><i style='width:"+Math.min(100,Math.round(vt.verified_today/vt.target*100))+"%'></i></div></div>";
@@ -597,21 +631,25 @@ async function handoff(id){var m=$("vm_"+id),who=$("vh_"+id).value;if(!who){m.st
  catch(e){m.style.color="var(--bad)";m.textContent=err(e)}}
 
 /* ---------- leads ---------- */
-var COLS="id,lead_code,status,assigned_to,created_by,next_action_at,estimated_value,service_interests,source_evidence_url,source_reference,contact_basis,status_reason,lost_reason,do_not_contact,created_at,company:companies(id,name,website,domain,city,industry),contact:contacts(id,full_name,designation,phone_e164,email),source:lead_sources(source_name),owner:profiles!leads_assigned_to_fkey(full_name,employee_code)";
+var COLS="id,lead_code,status,custom_stage,assigned_to,created_by,next_action_at,estimated_value,service_interests,source_evidence_url,source_reference,contact_basis,status_reason,lost_reason,do_not_contact,created_at,company:companies(id,name,website,domain,city,industry),contact:contacts(id,full_name,designation,phone_e164,email),source:lead_sources(source_name),owner:profiles!leads_assigned_to_fkey(full_name,employee_code)";
 async function leads(){$("sl_add").hidden=$("sl_imp").hidden=!(FOUND||any(["lead_generation","sales"]));
- try{await staff();LEADS=await q(sb().from("leads").select(COLS).order("created_at",{ascending:false}).limit(1000));
-  var st=$("sl_st"),v=st.value;st.innerHTML="<option value=''>All stages</option><option value='open'>All open</option>"+Object.keys(ST).map(function(s){return"<option value='"+s+"'>"+ST[s][0]+"</option>"}).join("");st.value=v;
+ try{await staff();await opts();LEADS=await q(sb().from("leads").select(COLS).order("created_at",{ascending:false}).limit(1000));
+  var st=$("sl_st"),v=st.value;st.innerHTML="<option value=''>All stages</option><option value='open'>All open</option>"+Object.keys(ST).map(function(s){return"<option value='"+s+"'>"+ST[s][0]+"</option>"}).join("")+(OPTS.stage.length?"<optgroup label='Your own stages'>"+OPTS.stage.map(function(x){return"<option value='c:"+esc(x[0])+"'>"+esc(x[1])+"</option>"}).join("")+"</optgroup>":"");st.value=PST!=null?PST:v;PST=null;
   var ow=$("sl_own"),w=ow.value;ow.innerHTML="<option value=''>Everyone</option><option value='me'>Mine</option><option value='none'>Unassigned</option>"+STAFF.map(function(p){return"<option value='"+p.id+"'>"+esc(p.name)+"</option>"}).join("");ow.value=w;draw()}
  catch(e){$("sl_tb").innerHTML="<tr><td colspan=7 class=sm>"+esc(err(e))+"</td></tr>"}}
 function draw(){var s=$("sl_q").value.trim().toLowerCase(),st=$("sl_st").value,ow=$("sl_own").value,CL=["converted","closed_lost","invalid","suppressed","verification_rejected"];
  var L=LEADS.filter(function(l){var c=l.company||{},p=l.contact||{};
-  if(st=="open"?CL.indexOf(l.status)>=0:st&&l.status!=st)return false;
+  if(st.indexOf("c:")==0){if(l.custom_stage!=st.slice(2))return false}else if(st=="open"?CL.indexOf(l.status)>=0:st&&l.status!=st)return false;
   if(ow=="me"&&l.assigned_to!=SESS.id&&l.created_by!=SESS.id)return false;if(ow=="none"&&l.assigned_to)return false;if(ow&&ow!="me"&&ow!="none"&&l.assigned_to!=ow)return false;
   return!s||[l.lead_code,c.name,c.city,p.full_name,p.phone_e164,p.email].join(" ").toLowerCase().indexOf(s)>=0});
  $("sl_count").textContent=L.length+" of "+LEADS.length;
- $("sl_tb").innerHTML=L.slice(0,300).map(function(l){var c=l.company||{},p=l.contact||{};return"<tr style='cursor:pointer' onclick=\"S.open('"+l.id+"')\"><td class=mono style='font-size:12px'>"+esc(l.lead_code)+"</td><td><b>"+esc(c.name)+"</b><div class=sm>"+esc(c.city||"")+"</div></td><td>"+esc(p.full_name||"–")+"<div class=sm>"+esc(p.phone_e164||"")+"</div></td><td>"+tagS(l.status)+"</td><td>"+esc((l.owner||{}).full_name||"–")+"</td><td"+(late(l.next_action_at)?" style='color:var(--bad)'":"")+">"+esc(l.next_action_at?when(l.next_action_at):"–")+"</td><td class=n>"+(l.estimated_value?inr(l.estimated_value):"–")+"</td></tr>"}).join("")||"<tr><td colspan=7 class=sm>No leads match.</td></tr>";
+ $("sl_tb").innerHTML=L.slice(0,300).map(function(l){var c=l.company||{},p=l.contact||{};return"<tr style='cursor:pointer' onclick=\"S.open('"+l.id+"')\"><td class=mono style='font-size:12px'>"+esc(l.lead_code)+"</td><td><b>"+esc(c.name)+"</b><div class=sm>"+esc(c.city||"")+"</div></td><td>"+esc(p.full_name||"–")+"<div class=sm>"+esc(p.phone_e164||"")+"</div></td><td>"+tagS(l.status)+" "+tagC(l.custom_stage)+"</td><td>"+(l.assigned_to?esc((l.owner||{}).full_name||"–"):canAssign()?"<button class='btn g s' onclick=\"event.stopPropagation();S.quickAssign('"+l.id+"')\">Assign</button>":"<span class=sm>Unassigned</span>")+"</td><td"+(late(l.next_action_at)?" style='color:var(--bad)'":"")+">"+esc(l.next_action_at?when(l.next_action_at):"–")+"</td><td class=n>"+(l.estimated_value?inr(l.estimated_value):"–")+"</td></tr>"}).join("")||"<tr><td colspan=7 class=sm>No leads match.</td></tr>";
  $("sl_more").textContent=L.length>300?"Showing the first 300. Narrow the search to see the rest.":""}
-function goStage(s){show("sleads");setTimeout(function(){$("sl_st").value=s;draw()},300)}
+function goStage(s){PST=s||"";if($("sl_st"))$("sl_st").value=PST;show("sleads")}
+function goVer(f){VF=f;show("sver")}
+function goTeam(f){TF=f;show("steam")}
+function canAssign(){return FOUND||any(["verifier","telecaller","department_head","sales"])}
+async function quickAssign(id){await open(id);if(OPEN&&OPEN.l)assign()}
 async function addForm(){var f=$("sl_form");await sources();
  f.innerHTML="<div class=ttl-r><div><span class=mono>_ New lead</span><h3>Add a lead.</h3></div><button class='btn g s' onclick=\"$('sl_form').hidden=true\">Close</button></div>"+
   "<h4>Company</h4><div class=f2><div><label for=nl_co>Company name *</label><input id=nl_co></div><div><label for=nl_web>Website</label><input id=nl_web placeholder='e.g. nimbuscoffee.in'></div>"+
@@ -668,14 +706,14 @@ async function promote(id){var b=$("im_go");b.disabled=true;try{var j=await q(sb
 
 /* ---------- one lead: everything about it in a side panel ---------- */
 async function open(id){OPEN=id;var P=$("lp");P.hidden=false;$("lp_h").innerHTML="<p class=note>Loading…</p>";$("lp_b").innerHTML="";
- try{await staff();var l=await q(sb().from("leads").select(COLS).eq("id",id).single());
+ try{await staff();await opts();var l=await q(sb().from("leads").select(COLS).eq("id",id).single());
   var res=await Promise.all([sb().from("lead_status_history").select("old_status,new_status,reason,changed_at,changed_by").eq("lead_id",id).order("changed_at",{ascending:false}),
    sb().from("lead_activities").select("activity_type,outcome,notes,occurred_at,employee_id").eq("lead_id",id).order("occurred_at",{ascending:false}),
    sb().from("followups").select("id,due_at,task_type,description,status,assigned_to").eq("lead_id",id).order("due_at",{ascending:false}),
    sb().from("lead_appointments").select("id,starts_at,mode,meeting_url,location_text,status").eq("lead_id",id).order("starts_at",{ascending:false}),
    sb().from("lead_qualifications").select("total_score,requirement_summary,created_at").eq("lead_id",id).order("created_at",{ascending:false}).limit(1)]);
   var H=res[0].data||[],A=res[1].data||[],F=res[2].data||[],AP=res[3].data||[],QL=(res[4].data||[])[0],c=l.company||{},p=l.contact||{},who=function(u){var x=STAFF.filter(function(s){return s.id==u})[0];return x?x.name:"Someone"};
-  $("lp_h").innerHTML="<span class=mono>"+esc(l.lead_code)+" · "+esc((l.source||{}).source_name||"No source")+"</span><h3>"+esc(c.name)+"</h3><div class=tpmeta>"+tagS(l.status)+(l.do_not_contact?"<span class='tag c-fire'>Do not contact</span>":"")+(QL?"<span class='tag c-violet'>Score "+QL.total_score+"/100</span>":"")+(l.estimated_value?"<span class=tag>"+inr(l.estimated_value)+"</span>":"")+"</div>";
+  $("lp_h").innerHTML="<span class=mono>"+esc(l.lead_code)+" · "+esc((l.source||{}).source_name||"No source")+"</span><h3>"+esc(c.name)+"</h3><div class=tpmeta>"+tagS(l.status)+tagC(l.custom_stage)+(l.do_not_contact?"<span class='tag c-fire'>Do not contact</span>":"")+(QL?"<span class='tag c-violet'>Score "+QL.total_score+"/100</span>":"")+(l.estimated_value?"<span class=tag>"+inr(l.estimated_value)+"</span>":"")+"</div>";
   var openF=F.filter(function(f){return f.status=="open"||f.status=="overdue"}),apt=AP.filter(function(a){return a.status=="proposed"||a.status=="confirmed"})[0];
   var ph=p.phone_e164||"";
   var acts="<div class=kvs style='margin:12px 0'>"+
@@ -685,7 +723,7 @@ async function open(id){OPEN=id;var P=$("lp");P.hidden=false;$("lp_h").innerHTML
    "<div class=kv><span class=mono>Website</span><b>"+(c.domain?"<a target=_blank rel=noopener href='https://"+esc(c.domain)+"'>"+esc(c.domain)+"</a>":"–")+"</b></div>"+
    "<div class=kv><span class=mono>City · industry</span><b>"+esc([c.city,c.industry].filter(Boolean).join(" · ")||"–")+"</b></div>"+
    "<div class=kv><span class=mono>Services</span><b style='white-space:normal;text-align:right'>"+esc((l.service_interests||[]).join(", ")||"–")+"</b></div>"+
-   "<div class=kv><span class=mono>Owner</span><b>"+esc((l.owner||{}).full_name||"Unassigned")+"</b></div>"+
+   "<div class=kv style='align-items:center'><span class=mono>Owner</span><b>"+esc((l.owner||{}).full_name||"Unassigned")+(canAssign()?" <button class='btn g s' style='margin-left:8px' onclick=\"S.assign()\">"+(l.assigned_to?"Change":"Assign")+"</button>":"")+"</b></div>"+
    "<div class=kv><span class=mono>Next action</span><b"+(late(l.next_action_at)?" style='color:var(--bad)'":"")+">"+esc(l.next_action_at?when(l.next_action_at):"–")+"</b></div>"+
    (l.status_reason?"<div class=kv><span class=mono>Note</span><b style='white-space:normal;text-align:right'>"+esc(l.status_reason)+"</b></div>":"")+"</div>";
   var B=[];
@@ -693,7 +731,7 @@ async function open(id){OPEN=id;var P=$("lp");P.hidden=false;$("lp_h").innerHTML
   if(apt)B.push(["Meeting done","S.met('"+apt.id+"')"]);
   if(["discovery_completed","hot","warm","nurture"].indexOf(l.status)>=0)B.push(["Score the lead","S.score()"]);
   B.push(["Add note","S.note()"],["Schedule follow-up","S.fup()"],["Change stage","S.stage()"]);
-  if(FOUND||any(["verifier","telecaller","department_head","sales"]))B.push(["Reassign","S.assign()"]);
+  if(canAssign())B.push([l.assigned_to?"Reassign":"Assign owner","S.assign()"]);
   if(["converted","closed_lost","invalid","suppressed"].indexOf(l.status)<0)B.push(["Close as lost","S.lose()"]);
   acts+="<div style='display:flex;gap:8px;flex-wrap:wrap'>"+B.map(function(b,i){return"<button class='btn "+(i?"g ":"")+"s' onclick=\""+b[1]+"\">"+b[0]+"</button>"}).join("")+"</div><p class=msg id=lp_msg></p>";
   if(openF.length)acts+="<div class=mini>Open follow-ups</div>"+openF.map(function(f){return"<div class=kv style='align-items:center'><span"+(late(f.due_at)?" style='color:var(--bad)'":"")+">"+esc(when(f.due_at))+" · "+esc(f.description||f.task_type.replace(/_/g," "))+" · "+esc(who(f.assigned_to))+"</span><button class='btn g s' onclick=\"S.fdone('"+f.id+"')\">Done</button></div>"}).join("");
@@ -707,19 +745,30 @@ async function open(id){OPEN=id;var P=$("lp");P.hidden=false;$("lp_h").innerHTML
 function close(){$("lp").hidden=true;OPEN=null}
 async function after(msg){toast("Saved",msg,null,"c-mint");var id=OPEN&&OPEN.id;if(id)open(id);refresh()}
 function lid(){return OPEN&&OPEN.id}
-function note(){ask({k:"_ Note",t:"Add a note.",ok:"Save note",body:"<label for=m_in>Note</label><textarea id=m_in rows=4 placeholder='What happened, what they need, what’s next'></textarea>",
- onOk:async function(){var t=$("m_in").value.trim();if(!t)return"Write the note first.";try{await q(sb().from("lead_activities").insert({lead_id:lid(),employee_id:SESS.id,activity_type:"note",notes:t}));after("Note added.")}catch(e){return err(e)}}})}
-function fup(){ask({k:"_ Follow-up",t:"Schedule a follow-up.",ok:"Schedule",body:"<label for=m_d>When</label><input id=m_d type=datetime-local value='"+localNow(24)+"'><label for=m_ty>Type</label><select id=m_ty><option value=follow_up>Follow up</option><option value=callback>Call back</option><option value=send_details>Send details / deck</option><option value=whatsapp>WhatsApp</option><option value=meeting_prep>Meeting prep</option></select><label for=m_in>What to do</label><input id=m_in placeholder='e.g. Send the reels portfolio'>",
- onOk:async function(){if(!$("m_d").value)return"Pick a date and time.";try{await q(sb().from("followups").insert({lead_id:lid(),assigned_to:SESS.id,due_at:isoLocal($("m_d").value),task_type:$("m_ty").value,description:$("m_in").value.trim()||null}));after("Follow-up scheduled. It shows in Follow-ups and moves the lead’s next action.")}catch(e){return err(e)}}})}
+function note(){ask({k:"_ Note",t:"Add a note.",ok:"Save note",body:"<p class=note style='margin-bottom:10px'>The note is saved in this lead’s <b>History</b> (lower in this panel), with your name and the time. Everyone working on the lead can read it.</p><label for=m_in>Note</label><textarea id=m_in rows=4 placeholder='What happened, what they need, what’s next'></textarea>",
+ onOk:async function(){var t=$("m_in").value.trim();if(!t)return"Write the note first.";try{await q(sb().from("lead_activities").insert({lead_id:lid(),employee_id:SESS.id,activity_type:"note",notes:t}));after("Note saved in this lead’s History.")}catch(e){return err(e)}}})}
+async function fup(){await opts();ask({k:"_ Follow-up",t:"Schedule a follow-up.",ok:"Schedule",body:"<label for=m_d>When</label><input id=m_d type=datetime-local value='"+localNow(24)+"'><label for=m_ty>Type</label>"+pick("m_ty","followup_type",OPTS.followup_type,"follow_up")+"<label for=m_in>What to do</label><input id=m_in placeholder='e.g. Send the reels portfolio'>",
+ onOk:async function(){if(!$("m_d").value)return"Pick a date and time.";try{var ty=await picked("m_ty","followup_type");await q(sb().from("followups").insert({lead_id:lid(),assigned_to:SESS.id,due_at:isoLocal($("m_d").value),task_type:ty,description:$("m_in").value.trim()||null}));after("Follow-up scheduled. It shows in Follow-ups and moves the lead’s next action.")}catch(e){return err(e)}}})}
 async function fdone(id){try{await q(sb().from("followups").update({status:"completed"}).eq("id",id));after("Follow-up done.")}catch(e){$("lp_msg").style.color="var(--bad)";$("lp_msg").textContent=err(e)}}
-function stage(){var l=OPEN.l;ask({k:"_ Stage",t:"Move "+((l.company||{}).name||"lead")+" to…",ok:"Move",body:"<label for=m_st>New stage</label><select id=m_st>"+Object.keys(ST).filter(function(s){return s!=l.status&&s!="raw"&&s!="closed_lost"}).map(function(s){return"<option value='"+s+"'>"+ST[s][0]+"</option>"}).join("")+"</select>"+
- "<label for=m_in>Reason (needed if you’re overriding a rule)</label><input id=m_in placeholder='Optional'><p class=note>The CRM checks each move against the sales SOP. If a step is missing it tells you what to do first.</p>",
- onOk:async function(){var u={status:$("m_st").value},r=$("m_in").value.trim();if(r)u.status_reason=r;try{await q(sb().from("leads").update(u).eq("id",lid()).select("id").single());after("Moved to "+ST[u.status][0]+".")}catch(e){return err(e)}}})}
-function lose(){ask({k:"_ Close as lost",t:"Why was this lead lost?",ok:"Close lead",body:"<label for=m_r>Reason</label><select id=m_r>"+opt(LOST)+"</select><label for=m_in>Details</label><input id=m_in placeholder='Optional'>",
- onOk:async function(){try{await q(sb().from("leads").update({status:"closed_lost",lost_reason:$("m_r").value,lost_note:$("m_in").value.trim()||null}).eq("id",lid()).select("id").single());after("Closed as lost.")}catch(e){return err(e)}}})}
-async function assign(){await staff();var P=staffWith(["telecaller","sales","department_head","verifier","research","strategy","proposal","admin"]);
- ask({k:"_ Reassign",t:"Who should own this lead?",ok:"Assign",body:"<label for=m_w>Owner</label><select id=m_w>"+P.map(function(x){return"<option value='"+x.id+"'"+(x.id==OPEN.l.assigned_to?" selected":"")+">"+esc(x.name)+" · "+esc(x.roles.join(", ").replace(/_/g," "))+"</option>"}).join("")+"</select><label for=m_in>Note for them</label><input id=m_in placeholder='Optional'>",
- onOk:async function(){try{await q(sb().rpc("assign_lead",{p_lead_id:lid(),p_employee_id:$("m_w").value,p_note:$("m_in").value.trim()||null}));after("Lead reassigned.")}catch(e){return err(e)}}})}
+async function stage(){await opts();var l=OPEN.l,std=Object.keys(ST).filter(function(s){return s!=l.status&&s!="raw"&&s!="closed_lost"}).map(function(s){return[s,ST[s][0]]});
+ ask({k:"_ Stage",t:"Move "+((l.company||{}).name||"lead")+" to…",ok:"Move",body:"<label for=m_st>New stage</label><select id=m_st onchange=\"S.addToggle('m_st')\"><optgroup label='Sales SOP stages'>"+opt(std)+"</optgroup>"+
+  (OPTS.stage.length?"<optgroup label='Your own stages'>"+OPTS.stage.filter(function(x){return x[0]!=l.custom_stage}).map(function(x){return"<option value='c:"+esc(x[0])+"'>"+esc(x[1])+"</option>"}).join("")+"</optgroup>":"")+
+  (canList()?"<option value='__new'>＋ Add a new stage…</option>":"")+"</select><input id=m_st_new class=addnew hidden maxlength=60 placeholder='Name of the new stage, e.g. Site visit done'>"+
+  "<label for=m_in>Reason (needed if you’re overriding a rule)</label><input id=m_in placeholder='Optional'><p class=note>SOP stages are checked against the sales SOP; if a step is missing it tells you what to do first. Your own stages are labels on top of the SOP stage, so they never skip a rule.</p>",
+ onOk:async function(){var v=$("m_st").value,r=$("m_in").value.trim();
+  try{if(v=="__new"||v.indexOf("c:")==0){var code=v=="__new"?await picked("m_st","stage"):v.slice(2);
+    await q(sb().from("leads").update({custom_stage:code}).eq("id",lid()).select("id").single());
+    await sb().from("lead_activities").insert({lead_id:lid(),employee_id:SESS.id,activity_type:"note",notes:"Stage: "+lbl("stage",code)+(r?" · "+r:"")});after("Moved to "+lbl("stage",code)+".");return}
+   var u={status:v,custom_stage:null};if(r)u.status_reason=r;await q(sb().from("leads").update(u).eq("id",lid()).select("id").single());after("Moved to "+ST[v][0]+".")}catch(e){return err(e)}}})}
+function lostWords(t){return(t||"").trim().split(/\s+/).filter(Boolean).length}
+async function lose(){await opts();ask({k:"_ Close as lost",t:"Why was this lead lost?",ok:"Close lead",body:"<label for=m_r>Reason</label>"+pick("m_r","lost_reason",OPTS.lost_reason)+"<label for=m_in>Details (required)</label><textarea id=m_in rows=4 placeholder='e.g. They signed with another agency at ₹40k/month because they wanted Kannada video editing in-house.'></textarea><p class=note>The lead stays open until the details are written (at least 5 words).</p>",
+ onOk:async function(){var t=$("m_in").value.trim();if(lostWords(t)<5||t.length<15)return"Write the details (at least 5 words). The lead can’t be closed without them.";
+  try{var r=await picked("m_r","lost_reason");await q(sb().from("leads").update({status:"closed_lost",lost_reason:r,lost_note:t}).eq("id",lid()).select("id").single());after("Closed as lost.")}catch(e){return err(e)}}})}
+async function assign(){STAFF=[];await staff();var P=STAFF.filter(function(x){return x.active});
+ if(!P.length||(P.length==1&&P[0].id==SESS.id&&OPEN.l.assigned_to==SESS.id)){ask({k:"_ Assign",t:"Nobody else can take leads yet.",ok:"OK",noCancel:true,body:"<p class=note>Only people who have signed in to the portal can own leads. Add them under <b>Employees → Add employee</b> (they get an invite email), then tick their sales role under <b>Access</b>.</p>",onOk:function(){}});return}
+ ask({k:"_ "+(OPEN.l.assigned_to?"Reassign":"Assign"),t:"Who should own this lead?",ok:"Assign",body:"<label for=m_w>Owner</label><select id=m_w>"+P.map(function(x){return"<option value='"+x.id+"'"+(x.id==(OPEN.l.assigned_to||SESS.id)?" selected":"")+">"+esc(x.name)+(x.id==SESS.id?" (me)":"")+" · "+esc(x.roles.length?x.roles.join(", ").replace(/_/g," "):"no sales role yet")+"</option>"}).join("")+"</select><label for=m_in>Note for them</label><input id=m_in placeholder='Optional'>"+
+  (P.length<3?"<p class=note>Only people who have signed in to the portal are listed. Invite more from Employees, then give them a role under Access.</p>":""),
+ onOk:async function(){try{await q(sb().rpc("assign_lead",{p_lead_id:lid(),p_employee_id:$("m_w").value,p_note:$("m_in").value.trim()||null}));after(OPEN.l.assigned_to?"Lead reassigned.":"Lead assigned.")}catch(e){return err(e)}}})}
 function meet(){ask({k:"_ Discovery meeting",t:"Book the discovery meeting.",ok:"Book meeting",body:"<label for=m_d>Date and time</label><input id=m_d type=datetime-local value='"+localNow(48)+"'><label for=m_mo>Where</label><select id=m_mo><option value=google_meet>Google Meet</option><option value=in_person>In person</option><option value=phone>Phone</option><option value=other>Other</option></select><label for=m_in>Meeting link or address</label><input id=m_in>",
  onOk:async function(){if(!$("m_d").value)return"Pick a date and time.";var mo=$("m_mo").value,x=$("m_in").value.trim();
   try{await q(sb().from("lead_appointments").insert({lead_id:lid(),meeting_type:"discovery",starts_at:isoLocal($("m_d").value),mode:mo,meeting_url:mo=="in_person"?null:x||null,location_text:mo=="in_person"?x||null:null,status:"confirmed",created_by:SESS.id}));
@@ -749,7 +798,23 @@ async function fu(){seg("sf_seg",function(f){FF=f;fu()});var L=$("sf_list");
  catch(e){L.innerHTML=empty(esc(err(e)))}}
 async function fdoneL(id){try{await q(sb().from("followups").update({status:"completed"}).eq("id",id));fu()}catch(e){toast("Not saved",err(e),null,"c-fire")}}
 
-/* ---------- sales access (HR / founder) ---------- */
+/* ---------- team follow-ups (founder / department head) ---------- */
+async function team(){seg("st_seg",function(f){TF=f;teamDraw()});$("st_seg").querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.dataset.f==TF)});
+ try{await staff();TEAM=await q(sb().from("followups").select("id,due_at,task_type,description,status,assigned_to,lead:leads(id,lead_code,status,company:companies(name))").in("status",["open","overdue"]).order("due_at").limit(1000));
+  var w=$("st_who"),v=w.value,ids={};TEAM.forEach(function(f){ids[f.assigned_to]=1});
+  w.innerHTML="<option value=''>Everyone</option>"+STAFF.filter(function(p){return ids[p.id]}).map(function(p){return"<option value='"+p.id+"'>"+esc(p.name)+"</option>"}).join("");w.value=v;
+  var od=TEAM.filter(function(f){return late(f.due_at)}),td=TEAM.filter(function(f){return!late(f.due_at)&&f.due_at<dayStart(1).toISOString()}),ppl={};od.forEach(function(f){ppl[f.assigned_to]=1});
+  $("st_stats").innerHTML=stat(od.length?"c-fire":"c-mint","!",od.length,"Overdue","S.goTeam('overdue');S.teamDraw()")+stat("c-amber","◷",td.length,"Due later today","S.goTeam('today');S.teamDraw()")+stat("c-ion","≡",TEAM.length,"All open","S.goTeam('all');S.teamDraw()")+stat("c-violet","◉",Object.keys(ppl).length,"People with overdue items");
+  teamDraw()}
+ catch(e){$("st_list").innerHTML=empty(esc(err(e)))}}
+function teamDraw(){var who=$("st_who").value,now=dayStart(1).toISOString(),nm2=function(u){var x=STAFF.filter(function(s){return s.id==u})[0];return x?x.name:"Someone"};
+ $("st_seg").querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.dataset.f==TF)});
+ var L=TEAM.filter(function(f){return(!who||f.assigned_to==who)&&(TF=="overdue"?late(f.due_at):TF=="today"?!late(f.due_at)&&f.due_at<now:true)});
+ $("st_list").innerHTML=L.length?"<div class=list>"+L.map(function(f){var l=f.lead||{},c=l.company||{};
+  return"<p style='flex-wrap:wrap'><span class=mono"+(late(f.due_at)?" style='color:var(--bad)'":"")+">"+esc(when(f.due_at))+"</span><span style='flex:1;min-width:200px'><b>"+esc(c.name||"")+"</b> · "+esc(f.description||f.task_type.replace(/_/g," "))+"<br><span class=sm>"+esc(nm2(f.assigned_to))+" · "+esc(l.lead_code||"")+" · "+esc((ST[l.status]||[l.status||""])[0])+"</span></span><button class='btn g s' onclick=\"S.open('"+l.id+"')\">Open lead</button></p>"}).join("")+"</div>"
+  :empty(TF=="overdue"?"No overdue follow-ups across the team.":"Nothing here.")}
+
+/* ---------- access (HR / founder) ---------- */
 async function access(){var m=$("ha_msg");m.textContent="";try{STAFF=[];await staff();
   $("ha_tb").innerHTML=STAFF.filter(function(p){return p.active}).map(function(p){return"<tr><td><b>"+esc(p.name)+"</b><div class=sm>"+esc(p.email)+"</div></td><td class=mono>"+esc(p.code||"–")+"</td><td style='white-space:normal'><div style='display:flex;flex-wrap:wrap;gap:4px 14px'>"+
    ROLES.filter(function(r){return FOUND||["admin","hr"].indexOf(r[0])<0||p.roles.indexOf(r[0])>=0}).map(function(r){return"<label class=chk style='margin:0'><input type=checkbox data-r='"+r[0]+"'"+(p.roles.indexOf(r[0])>=0?" checked":"")+(!FOUND&&["admin","hr"].indexOf(r[0])>=0?" disabled":"")+"> "+r[1]+"</label>"}).join("")+
@@ -760,9 +825,9 @@ async function saveRoles(b,code){var row=b.closest("tr"),r=[].slice.call(row.que
  catch(e){m.style.color="var(--bad)";m.textContent=err(e)}b.disabled=false}
 
 /* ---------- glue ---------- */
-var RN={spipe:pipe,scall:call,sver:ver,sleads:leads,sfup:fu,haccess:access};
+var RN={spipe:pipe,scall:call,sver:ver,sleads:leads,sfup:fu,steam:team,haccess:access};
 function refresh(){var on=document.querySelector(".sec.on");if(on&&RN[on.id])RN[on.id]()}
-function start(){clearInterval(TIMER);TIMER=setInterval(function(){if(document.hidden||!$("mdl").hidden)return;var on=document.querySelector(".sec.on");if(on&&["spipe","scall","sver","sfup"].indexOf(on.id)>=0&&!document.activeElement.matches("textarea,input,select"))RN[on.id]()},60000);
+function start(){clearInterval(TIMER);TIMER=setInterval(function(){if(document.hidden||!$("mdl").hidden)return;var on=document.querySelector(".sec.on");if(on&&["spipe","scall","sver","sfup","steam"].indexOf(on.id)>=0&&!document.activeElement.matches("textarea,input,select"))RN[on.id]()},60000);
  if(!SESS)return;setTimeout(async function(){try{
   if(any(["telecaller","sales"])){var c=await q(sb().rpc("calling_queue"));if(c.length)toast("Calls due",c.length+" lead"+(c.length>1?"s are":" is")+" waiting in your calling queue.",function(){show("scall")},"c-cyan")}
   var f=await sb().from("followups").select("id",{count:"exact",head:true}).eq("assigned_to",SESS.id).eq("status","overdue");if(f.count)toast("Overdue follow-ups",f.count+" follow-up"+(f.count>1?"s are":" is")+" overdue.",function(){show("sfup")},"c-fire");
@@ -770,7 +835,7 @@ function start(){clearInterval(TIMER);TIMER=setInterval(function(){if(document.h
 function stop(){clearInterval(TIMER);STAFF=[];SRC=[];LEADS=[];close()}
 function roleBoxes(){return ROLES.filter(function(r){return FOUND||["admin","hr"].indexOf(r[0])<0}).map(function(r){return"<label class=chk style='margin:0'><input type=checkbox data-r='"+r[0]+"'> "+r[1]+"</label>"}).join("")}
 document.addEventListener("keydown",function(e){if(e.key=="Escape"&&$("lp")&&!$("lp").hidden&&$("mdl").hidden)close()});
-return{nav:nav,R:RN,err:err,roleBoxes:roleBoxes,runEngine:runEngine,refresh:refresh,start:start,stop:stop,draw:draw,goStage:goStage,addForm:addForm,add:add,importForm:importForm,promote:promote,open:open,close:close,
+return{nav:nav,tabs:tabs,goVer:goVer,goTeam:goTeam,teamDraw:teamDraw,quickAssign:quickAssign,addToggle:addToggle,R:RN,err:err,roleBoxes:roleBoxes,runEngine:runEngine,refresh:refresh,start:start,stop:stop,draw:draw,goStage:goStage,addForm:addForm,add:add,importForm:importForm,promote:promote,open:open,close:close,
  outcome:outcome,verify:verify,handoff:handoff,note:note,fup:fup,fdone:fdone,fdoneL:fdoneL,stage:stage,lose:lose,assign:assign,meet:meet,met:met,score:score,saveRoles:saveRoles}})();
 
 </script>
@@ -953,16 +1018,24 @@ function hdr(){if(FOUND){var f=U[me]||{};$("h_av").textContent=ini(f.name);$("h_
  if(HRM){var hu=me&&U[me];$("h_av").textContent=hu?ini(hu.name):"HR";$("h_n").textContent=hu?hu.name:"HR desk";$("h_r").textContent=hu?"HR desk · "+me:"Rock Papers Scissors";$("shc").hidden=true;return}
  var u=U[me]||{};$("shc").hidden=false;$("h_av").textContent=ini(u.name);$("h_n").textContent=u.name||me;$("h_r").textContent=u.role||me}
 var EMN=[["dash","Dashboard"],["task","Tasks"],["pay","Salary &amp; Payslip"],["auth2","Authentication"]],
-    FDN=[["fover","Overview"],["fperf","Performance"],["hrep","Work reports"],["hloc","Locations"],["ftask","All tasks"],["task","Assign tasks"],["hemp","Employees"],["hpay","Payroll"],["auth2","ID &amp; visiting cards"]],
-    HRN=[["hemp","Employees"],["hloc","Locations"],["hpay","Payroll"],["hrep","Work reports"],["auth2","ID &amp; visiting cards"]];
+    FDN=[["fover","Overview"],["fperf","Performance"],["hrep","Work reports"],["ftask","All tasks"],["task","Assign tasks"],["hemp","Employees"],["hpay","Payroll"],["auth2","ID &amp; visiting cards"]],
+    HRN=[["hemp","Employees"],["hpay","Payroll"],["hrep","Work reports"],["auth2","ID &amp; visiting cards"]];
 function nav(){var L=(FOUND?FDN:HRM?HRN:EMN).concat(S.nav());$("nav").innerHTML="<div class=logo><b>rock</b><em>·</em><span>papers</span><em>·</em><b>scissors</b></div>"+
  L.map(function(x,i){return"<a href='#' data-s='"+x[0]+"'><small>"+p2(i+1)+"</small>"+x[1]+"</a>"}).join("")+
  "<div class=sp></div><a href='#' id=lo><small>↩</small>"+(HRM&&!FOUND&&!me?"Exit HR desk":"Logout")+"</a>";
  document.querySelectorAll("#nav a[data-s]").forEach(function(a){a.onclick=function(e){e.preventDefault();show(a.dataset.s)}});
  $("lo").onclick=function(e){e.preventDefault();logout()}}
-function show(s){var a=document.querySelector("#nav a[data-s="+s+"]");if(!a)return;document.querySelectorAll("#nav a").forEach(function(x){x.classList.toggle("on",x==a)});
- document.querySelectorAll(".sec").forEach(function(x){x.classList.toggle("on",x.id==s)});
- $("ttl").textContent=a.lastChild.textContent+".";$("tnum").textContent="_"+a.firstChild.textContent+" · "+(FOUND?"Founder":HRM?"HR desk":s=="dash"?"Mission control":"Section");
+/* pages that live as tabs inside one menu item: attendance inside Employees, verification / leads / team follow-ups inside Sales pipeline */
+function grpTabs(g){return g=="hemp"?(HRM?[["hemp","Team"],["hloc","Attendance & locations"]]:[]):g=="spipe"&&window.S&&S.tabs?S.tabs():[]}
+function grpOf(s){var g=["hemp","spipe"];for(var i=0;i<g.length;i++)if(document.querySelector("#nav a[data-s="+g[i]+"]")&&grpTabs(g[i]).some(function(t){return t[0]==s}))return g[i];return null}
+function subtabs(par,s){document.querySelectorAll(".subtabs").forEach(function(x){x.remove()});var T=par?grpTabs(par):[];if(T.length<2)return;
+ var d=document.createElement("div");d.className="seg subtabs";d.innerHTML=T.map(function(t){return"<button data-s='"+t[0]+"'"+(t[0]==s?" class=on":"")+">"+t[1]+"</button>"}).join("");
+ d.querySelectorAll("button").forEach(function(b){b.onclick=function(){show(b.dataset.s)}});var sec=$(s);sec.insertBefore(d,sec.firstChild)}
+function show(s){var a=document.querySelector("#nav a[data-s="+s+"]"),par=a&&grpTabs(s).length?s:null;if(!a){par=grpOf(s);if(par)a=document.querySelector("#nav a[data-s="+par+"]")}if(!a)return;
+ document.querySelectorAll("#nav a").forEach(function(x){x.classList.toggle("on",x==a)});
+ document.querySelectorAll(".sec").forEach(function(x){x.classList.toggle("on",x.id==s)});subtabs(par,s);
+ var tl=par&&s!=par?(grpTabs(par).filter(function(t){return t[0]==s})[0]||[])[1]:null;
+ $("ttl").textContent=(tl||a.lastChild.textContent)+".";$("tnum").textContent="_"+a.firstChild.textContent+" · "+(FOUND?"Founder":HRM?"HR desk":s=="dash"?"Mission control":"Section");
  (R[s]||S.R[s]||function(){})();window.scrollTo(0,0);navPush({s:s})}
 /* in-page history: the browser's own back button leaves the artifact, so the page keeps its own trail */
 var NAVH=[],NAVI=-1,NAVLOCK=false;
@@ -1092,7 +1165,7 @@ var R={
  pay:function(){var S=pays(me),ks=Object.keys(S).sort().reverse(),v=$("psm").value;
   $("psm").innerHTML=ks.map(function(m){return"<option value="+m+">"+mname(m)+"</option>"}).join("")||"<option value=''>No payslips yet</option>";if(ks.indexOf(v)>=0)$("psm").value=v;slip()},
  auth2:function(){var p=$("cpick");p.hidden=!HRM;$("cnote").textContent=HRM?"Pick an employee to view their cards. Edit details from the Employees page.":"Details on these cards are managed by HR. Spot a mistake? Ask HR to correct it.";
-  if(HRM){var v=p.value,ids=Object.keys(U).sort(function(a,b){return String(U[a].name).localeCompare(U[b].name)});p.innerHTML=ids.map(function(id){return"<option value=\""+esc(id)+"\">"+esc(U[id].name)+" · "+esc(id)+"</option>"}).join("")||"<option value=''>No employees yet</option>";if(v&&U[v])p.value=v}
+  if(HRM){var v=p.value,ids=Object.keys(U).sort(function(a,b){return String(U[a].name).localeCompare(U[b].name)});p.innerHTML=ids.map(function(id){return"<option value=\""+esc(id)+"\">"+esc(U[id].name)+" · "+esc(id)+"</option>"}).join("")||"<option value=''>No employees yet</option>";if(v&&U[v])p.value=v;else if(me&&U[me])p.value=me}
   rcards()},
  hemp:function(tableOnly){var ids=Object.keys(U).sort(function(a,b){return String(U[a].name).localeCompare(U[b].name)}),today=k(new Date()),on=0,rep=0,pres=0,T=tasks();
   $("ecount").textContent=ids.length+" people";$("demob").hidden=!ids.some(function(id){return U[id].demo});
@@ -1121,8 +1194,10 @@ function ecard(){var i=insOf(me,D),s=insSt(i),t=function(id,v){$(id).textContent
  $("e_nm").textContent=(U[me]||{}).name||"";$("e_pr").textContent=i.prov||"Not added by HR yet";$("e_si").textContent=i.sum?inr(i.sum):"--";
  t("e_v",i.from||i.till?(i.from||"?")+" → "+(i.till||"?"):"");t("e_dl",i.till?Math.max(0,Math.ceil((new Date(i.till)-new Date(k(new Date())))/864e5))+" days":"");
  t("e_no",i.nom?i.nom+(i.rel?" ("+i.rel+")":""):"");t("e_mc",i.mem);t("e_hl",i.help)}
-function rcards(){var id=HRM?$("cpick").value:me,u=U[id]||{},t=function(i,v){$(i).textContent=v||"–"};
- $("i_av").textContent=ini(u.name);t("i_n",u.name);t("i_r",u.role);t("i_id",id);t("i_dp",u.dept);t("i_ph",u.phone);t("i_bg",u.bg);t("i_jn",u.joined?dshort(u.joined.slice(0,10))+" "+u.joined.slice(0,4):"");
+function phOf(id){var d=id==me?D:(ld("ems_d_"+id,{})||{});return d&&d.photo}
+function rcards(){var id=HRM?$("cpick").value:me,u=U[id]||{},t=function(i,v){$(i).textContent=v||"–"},ph=phOf(id);
+ if(ph){$("i_av").innerHTML="";var im=document.createElement("img");im.src=ph;im.alt=u.name||"";$("i_av").appendChild(im)}else $("i_av").textContent=ini(u.name);
+ $("ph_box").hidden=!(me&&id==me);$("ph_rm").hidden=!ph;t("i_n",u.name);t("i_r",u.role);t("i_id",id);t("i_dp",u.dept);t("i_ph",u.phone);t("i_bg",u.bg);t("i_jn",u.joined?dshort(u.joined.slice(0,10))+" "+u.joined.slice(0,4):"");
  t("v_n",u.name);t("v_r",u.role);t("v_ph",u.phone);t("v_em",u.email);$("v_ad").textContent=u.addr||"rockpapersscissors.in"}
 
 /* payslips: HR writes ems_pay_<id> {"YYYY-MM": slip}; slips made by the older version stay readable */
@@ -1236,6 +1311,13 @@ function ePw(id){var u=U[id];ask({k:"_ Password",t:"Send "+u.name+" a password r
 function eDel(id){var u=U[id];if(u.owner){ask({k:"_ Founder",t:"The founder account can’t be removed.",ok:"OK",noCancel:true,body:"",onOk:function(){}});return}ask({k:"_ Remove employee",t:"Remove "+u.name+" from the portal?",ok:"Remove employee",
  body:"<p class=note style='margin-bottom:12px'>They can no longer log in, and they disappear from task lists. Their past attendance and reports are kept.</p><label for=m_in>Type the Employee ID ("+esc(id)+") to confirm</label><input id=m_in autocomplete=off>",
  onOk:async function(){if($("m_in").value.trim()!=id)return"Type the Employee ID exactly as shown.";var r=await SB.rpc("portal_set_active",{p_code:id,p_active:false});if(r.error&&!/No employee/.test(r.error.message))return S.err(r.error);users();delete U[id];sv("ems_users",U);if(EID==id)$("ef").hidden=true;R.hemp(true)}})}
+/* ID card photo: cropped square, shrunk to 320 px so it stays small, saved with the employee's own portal data */
+function phPick(inp){var f=inp.files&&inp.files[0],m=$("ph_msg");inp.value="";if(!f)return;
+ if(!/^image\//.test(f.type)){m.textContent="Choose a photo (JPG or PNG).";return}if(f.size>15e6){m.textContent="That photo is too large. Use one under 15 MB.";return}
+ m.textContent="Preparing your photo…";var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){var S2=320,c=document.createElement("canvas"),x=c.getContext("2d"),side=Math.min(im.width,im.height);
+  c.width=c.height=S2;x.drawImage(im,(im.width-side)/2,(im.height-side)*0.35,side,side,0,0,S2,S2);var url=c.toDataURL("image/jpeg",.82);
+  D.photo=url;save();rcards();m.textContent="Photo saved. It now shows on your ID card."};im.onerror=function(){m.textContent="That file couldn’t be read as a photo."};im.src=r.result};r.readAsDataURL(f)}
+function phRemove(){delete D.photo;save();rcards();$("ph_msg").textContent="Photo removed."}
 function eCards(id){show("auth2");$("cpick").value=id;rcards()}
 
 /* email through the HR person's own Gmail connector */

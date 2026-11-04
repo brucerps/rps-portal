@@ -19,7 +19,10 @@ The Rock Papers Scissors employee portal: attendance, leaves, tasks, payslips an
   - verifier: Verification desk
   - telecaller and sales: Calling queue and Follow-ups
   - founder and department heads: Sales pipeline
-  - HR: Sales access
+  - HR and the founder: Access (who can open what)
+  - The founder's Sales pipeline holds Verification desk, Leads and Team follow-ups as tabs; every pipeline tile opens its list.
+- **Your own lists:** the founder, HR and department heads can add new lead stages, loss reasons and follow-up types ("+ Add new" in each list). Closing a lead as lost needs a reason and written details (5+ words), checked by the database.
+- **Employees:** attendance and punch locations are a tab inside Employees. Employees can upload their own photo for the ID card.
 - **Lead robot (`supabase/functions/lead-engine`):** every morning from 07:00 to 09:00 IST it does the following.
   - It finds requirement leads across KA, TN, TS, AP and KL (half from Bengaluru) with Claude web search. These are businesses that are hiring marketing people, launching, freshly funded or asking for an agency.
   - It checks each lead in code: the proof page loads and names the business, the signal is under 45 days old, the business is in scope, there's a business phone or email, it isn't an agency, and it isn't already in the CRM.
