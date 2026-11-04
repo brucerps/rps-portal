@@ -3,6 +3,7 @@
 // (Mon–Sat) queues each employee's morning briefing. "eod" and "briefing" emails are composed at send time
 // from the employee's open tasks, follow-ups, leads and proposals. Calling it from outside only flushes the queue.
 import { createClient } from "npm:@supabase/supabase-js@2.117.3";
+import nodemailer from "npm:nodemailer@6.9.16";
 
 const PORTAL = "https://brucerps.github.io/rps-portal/";
 const json = (s: number, b: unknown) => new Response(JSON.stringify(b), { status: s, headers: { "content-type": "application/json" } });
@@ -35,9 +36,13 @@ Deno.serve(async () => {
   }
 
   // 2. Send what is waiting
+  // Gmail (from the founder's own address) if its app password is set, otherwise Resend if its key is set
+  const gpass = (Deno.env.get("GMAIL_APP_PASSWORD") ?? "").replace(/\s+/g, "");
+  const guser = Deno.env.get("GMAIL_USER") || "info@rockpapersscissors.in";
   const key = Deno.env.get("RESEND_API_KEY");
-  if (!key) return json(200, { ...out, waiting: "RESEND_API_KEY is not set; emails stay queued" });
-  const from = Deno.env.get("MAIL_FROM") || "RPS Portal <onboarding@resend.dev>";
+  if (!gpass && !key) return json(200, { ...out, waiting: "No email sender connected yet (GMAIL_APP_PASSWORD); emails stay queued" });
+  const from = Deno.env.get("MAIL_FROM") || (gpass ? `Rock Papers Scissors <${guser}>` : "RPS Portal <onboarding@resend.dev>");
+  const smtp = gpass ? nodemailer.createTransport({ host: "smtp.gmail.com", port: 465, secure: true, auth: { user: guser, pass: gpass } }) : null;
   const pending = (await db.from("email_outbox").select("*").is("sent_at", null).lt("attempts", 5).order("created_at").limit(12)).data ?? [];
   let sent = 0, failed = 0;
   for (const m of pending) {
@@ -45,11 +50,23 @@ Deno.serve(async () => {
       let subject = m.subject, html = m.html;
       if (m.kind === "eod" || m.kind === "briefing") ({ subject, html } = await compose(db, m.kind, m.payload));
       if (!subject || !html) { await db.from("email_outbox").update({ attempts: 5, error: "nothing to send" }).eq("id", m.id); continue; }
-      const r = await fetch((Deno.env.get("RESEND_BASE_URL") ?? "https://api.resend.com") + "/emails", {
-        method: "POST", headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
-        body: JSON.stringify({ from, to: [m.to_email], cc: m.cc?.length ? m.cc : undefined, subject, html: wrap(html) }) });
+      let r: { ok: boolean; status: number; text: () => Promise<string> };
+      if (smtp) {
+        try { await smtp.sendMail({ from, to: m.to_email, cc: m.cc?.length ? m.cc : undefined, subject, html: wrap(html) }); r = { ok: true, status: 250, text: async () => "" }; }
+        catch (e) {
+          const t = String((e as Error).message);
+          // wrong/missing app password or a connection problem: keep every email queued and try again next minute
+          if ((e as any)?.code === "EAUTH" || /ECONN|ETIMEDOUT|ESOCKET|EDNS/.test(String((e as any)?.code))) return json(200, { ...out, sent, failed, waiting: "Gmail: " + t.slice(0, 200) });
+          r = { ok: false, status: 0, text: async () => "Gmail: " + t };
+        }
+      } else {
+        const x = await fetch((Deno.env.get("RESEND_BASE_URL") ?? "https://api.resend.com") + "/emails", {
+          method: "POST", headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
+          body: JSON.stringify({ from, to: [m.to_email], cc: m.cc?.length ? m.cc : undefined, subject, html: wrap(html) }) });
+        r = { ok: x.ok, status: x.status, text: () => x.text() };
+      }
       if (r.ok) { await db.from("email_outbox").update({ sent_at: new Date().toISOString(), subject, error: null, attempts: m.attempts + 1 }).eq("id", m.id); sent++; }
-      else { await db.from("email_outbox").update({ attempts: m.attempts + 1, error: `Resend ${r.status}: ${(await r.text()).slice(0, 300)}` }).eq("id", m.id); failed++; }
+      else { await db.from("email_outbox").update({ attempts: m.attempts + 1, error: `${r.status ? "Resend " + r.status + ": " : ""}${(await r.text()).slice(0, 300)}` }).eq("id", m.id); failed++; }
     } catch (e) {
       await db.from("email_outbox").update({ attempts: m.attempts + 1, error: String((e as Error).message).slice(0, 300) }).eq("id", m.id); failed++;
     }
