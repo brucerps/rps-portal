@@ -221,11 +221,12 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--ion);outline-offset
 .sm{font-size:11px;color:var(--dust)}
 #fp_tb td{vertical-align:top}
 @media (max-width:820px){.cards2{gap:18px}}
+.lbtn{background:none;border:0;padding:0;color:inherit;cursor:pointer;-webkit-user-select:none;user-select:none;text-align:left;font-size:20px}.lbtn:focus-visible{outline:2px solid var(--fire);outline-offset:4px;border-radius:6px}aside .lbtn{padding:4px 12px 22px}
 </style>
 <canvas id="space"></canvas>
 
 <div id="auth">
- <div class="hdr"><div class="logo"><b>rock</b><em>·</em><span>papers</span><em>·</em><b>scissors</b></div><span style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn g s" id="dlb" hidden onclick="demoLoad()">Reset demo data</button><button class="btn g s" id="hrb" style="display:none" onclick="hrOpen()">HR desk →</button></span></div>
+ <div class="hdr"><button type="button" class="logo lbtn" onclick="location.reload()" aria-label="Rock Papers Scissors: reload"><b>rock</b><em>·</em><span>papers</span><em>·</em><b>scissors</b></button><span style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn g s" id="dlb" hidden onclick="demoLoad()">Reset demo data</button><button class="btn g s" id="hrb" style="display:none" onclick="hrOpen()">HR desk →</button></span></div>
  <div class="aw"><div>
   <h1><b>raw</b> to<br><b class="red">reality.</b></h1>
   <p class="lead">Every workday starts as a raw idea. Punch in, take on tasks from your crew, and close the day with a work report.</p>
@@ -235,7 +236,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--ion);outline-offset
    <label for="l_pw">Password</label><div class="pw"><input id="l_pw" type="password" autocomplete="current-password" placeholder="Your password" onkeydown="if(event.key=='Enter')login()"><button type="button" onclick="eye('l_pw',this)">Show</button></div>
    <button class="btn w" id="l_go" onclick="login()">Enter the portal <span class="ar">→</span></button><p style="margin:12px 0 0;text-align:center"><a href="#" class="mono" style="color:var(--soft)" onclick="event.preventDefault();forgot()">Forgot password?</a></p>
    <p id="amsg" class="msg" style="color:var(--bad)"></p>
-   <p class="mono" style="margin:6px 0 0;line-height:1.7;text-align:center">Employee IDs are issued by HR only.<br>No ID yet? Ask HR for your ID and password.</p>
+   
   </div></div><div></div></div>
  <div class="hud"><div><span class="mono">Mission clock</span><b id="mclk">T+00:00:00</b></div><div><span class="mono">Sector</span><b>12.97° N · 77.59° E</b></div><div><span class="mono">Capabilities</span><b>attendance · leaves · tasks · payslips · sales CRM</b></div></div>
 </div>
@@ -243,8 +244,8 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--ion);outline-offset
 <div id="app">
 <aside id="nav"></aside>
 <main>
- <div class="top"><div><span class="mono" id="tnum">_01 · Section</span><h2 class="mega" id="ttl">Dashboard.</h2></div>
-  <div class="r"><button class="btn g s bell" id="bell" hidden onclick="bellOpen()" aria-label="Notifications"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span id="bellc"></span></button><span class="navb"><button class="btn g s" id="nb" onclick="navGo(-1)" disabled aria-label="Back">← Back</button><button class="btn g s" id="nf" onclick="navGo(1)" disabled aria-label="Forward">Forward →</button></span><span class="chip mono syn"></span><span class="chip mono" id="shc"><i class="dot" id="hdot"></i><span id="hst">Off shift</span></span><div class="me"><div class="av" id="h_av"></div><div><div id="h_n" style="font-weight:600;font-size:14px"></div><div class="mono" id="h_r" style="font-size:10px"></div></div></div></div></div>
+ <div class="top"><div><span class="mono" id="tnum" hidden></span><h2 class="mega" id="ttl">Dashboard.</h2></div>
+  <div class="r"><button class="btn g s bell" id="bell" hidden onclick="bellOpen()" aria-label="Notifications"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span id="bellc"></span></button><span class="chip mono syn"></span><span class="chip mono" id="shc"><i class="dot" id="hdot"></i><span id="hst">Off shift</span></span><div class="me"><div class="av" id="h_av"></div><div><div id="h_n" style="font-weight:600;font-size:14px"></div><div class="mono" id="h_r" style="font-size:10px"></div></div></div></div></div>
 
  <!-- EMPLOYEE: dashboard -->
  <section class="sec" id="dash">
@@ -430,7 +431,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--ion);outline-offset
 
  <section class="sec" id="haccess">
   <div class="card"><div class="ttl-r"><div><span class="mono">_ Who can do what</span><h3>Access.</h3></div><button class="btn g s" onclick="S.refresh()">Refresh</button></div>
-   <p class="note" style="margin-bottom:14px">The founder and HR decide what each person can open. Tick what each person does; they see the matching screens the next time they open the portal. Only the founder can give Admin or HR.</p>
+   <p class="note" style="margin-bottom:14px">The founder and HR decide what each person can open. Tick what each person does; they see only the screens for their roles the next time they open the portal. Giving access emails the employee with the founder in CC; every change or removal emails the founder. Only the founder can give Admin or HR.</p>
    <div class="tw"><table><thead><tr><th>Employee</th><th>ID</th><th>Access</th><th></th></tr></thead><tbody id="ha_tb"></tbody></table></div><p class="msg" id="ha_msg"></p></div>
  </section>
 </main></div>
@@ -475,7 +476,7 @@ async function picked(id,kind){var v=$(id).value;if(v!="__new")return v;var t=($
  await q(sb().from("crm_options").insert({kind:kind,code:code,label:t,created_by:SESS.id}));OPTS[kind].push([code,t]);OPTL=0;return code}
 function lbl(kind,code){var x=OPTS[kind].filter(function(o){return o[0]==code})[0];return x?x[1]:code}
 function tagC(code){return code?"<span class='tag c-violet'>"+esc(lbl("stage",code))+"</span>":""}
-var ROLES=[["lead_generation","Lead generation"],["verifier","Verifier"],["telecaller","Telecaller"],["sales","Sales"],["department_head","Department head"],["research","Research"],["strategy","Strategy"],["proposal","Proposals"],["finance","Finance"],["hr","HR"],["admin","Admin (founder)"]];
+var ROLES=[["designer","Designer"],["video_editor","Video editor"],["content_writer","Content writer"],["social_media_manager","Social media manager"],["account_manager","Account manager"],["lead_generation","Lead generation"],["verifier","Verifier"],["telecaller","Telecaller"],["sales","Sales"],["department_head","Department head"],["research","Research"],["strategy","Strategy"],["proposal","Proposals"],["finance","Finance"],["hr","HR"],["admin","Admin (founder)"]];
 var OUT=[["interested","Interested","c-mint"],["no_answer","No answer","c-amber"],["call_later","Call later","c-violet"],["dm_unavailable","Decision-maker away","c-ion"],["not_interested","Not interested","c-fire"],["wrong_number","Wrong number","c-fire"],["do_not_contact","Do not contact","c-fire"]];
 var LEADS=[],STAFF=[],SRC=[],FOL=[],TEAM=[],PER="month",VF="verification_pending",FF="due",TF="overdue",PST=null,TIMER=null,OPEN=null;
 function sb(){return SB}
@@ -821,7 +822,7 @@ async function access(){var m=$("ha_msg");m.textContent="";try{STAFF=[];await st
    "</div></td><td><button class='btn g s' onclick=\"S.saveRoles(this,'"+esc(p.code||"")+"')\""+(p.code?"":" disabled title='Needs an Employee ID'")+">Save</button></td></tr>"}).join("")||"<tr><td colspan=4 class=sm>No employees yet.</td></tr>"}
  catch(e){m.style.color="var(--bad)";m.textContent=err(e)}}
 async function saveRoles(b,code){var row=b.closest("tr"),r=[].slice.call(row.querySelectorAll("input[data-r]:checked")).map(function(x){return x.dataset.r}),m=$("ha_msg");
- b.disabled=true;try{await q(sb().rpc("portal_set_roles",{p_code:code,p_roles:r}));m.style.color="var(--ok)";m.textContent="Saved access for "+code+": "+(r.join(", ").replace(/_/g," ")||"no sales access")+".";STAFF=[]}
+ b.disabled=true;try{await q(sb().rpc("portal_set_roles",{p_code:code,p_roles:r}));m.style.color="var(--ok)";m.textContent="Saved access for "+code+": "+(r.join(", ").replace(/_/g," ")||"basic employee access")+". The employee and the founder are emailed.";STAFF=[]}
  catch(e){m.style.color="var(--bad)";m.textContent=err(e)}b.disabled=false}
 
 /* ---------- glue ---------- */
@@ -837,6 +838,29 @@ function roleBoxes(){return ROLES.filter(function(r){return FOUND||["admin","hr"
 document.addEventListener("keydown",function(e){if(e.key=="Escape"&&$("lp")&&!$("lp").hidden&&$("mdl").hidden)close()});
 return{nav:nav,tabs:tabs,goVer:goVer,goTeam:goTeam,teamDraw:teamDraw,quickAssign:quickAssign,addToggle:addToggle,R:RN,err:err,roleBoxes:roleBoxes,runEngine:runEngine,refresh:refresh,start:start,stop:stop,draw:draw,goStage:goStage,addForm:addForm,add:add,importForm:importForm,promote:promote,open:open,close:close,
  outcome:outcome,verify:verify,handoff:handoff,note:note,fup:fup,fdone:fdone,fdoneL:fdoneL,stage:stage,lose:lose,assign:assign,meet:meet,met:met,score:score,saveRoles:saveRoles}})();
+
+/* ---------- daily routine: plan at sign-in, report at sign-out, honest hours ---------- */
+var PLANW=100;   /* words needed for the morning plan */
+function home(){if(!$("app")||$("app").style.display!="block"){location.reload();return}show(FOUND?"fover":"dash")}
+function planDone(){var t=k(new Date());return !!(D&&D.plan&&D.plan[t])}
+/* a shift left running from an earlier day is closed automatically (at most 9 hours) and flagged for HR */
+var STALE=null;
+function closeStale(){var today=k(new Date());if(!D.cur||D.cur>=today)return;var r=D.att&&D.att[D.cur],s=r&&r.s[r.s.length-1];if(!s||s.o){D.cur=null;return}
+ var st=new Date(s.i),eod=new Date(D.cur+"T23:59:00"),cap=new Date(Math.min(st.getTime()+9*36e5,eod.getTime()));
+ s.o=cap.toISOString();s.auto=1;D.last={i:s.i,o:s.o};STALE={day:D.cur,at:s.o};D.cur=null}
+function askPlan(){if(!me||planDone()||!$("mdl").hidden)return;var today=k(new Date()),o=openS();
+ ask({k:"_ Start of day",t:"Today's plan.",ok:"Start my day",noCancel:true,
+  body:"<p class=note style='margin-bottom:12px'>Before you start: what will you work on today? Tasks, leads, calls, shoots, edits, meetings. At least "+PLANW+" words. Your work report at sign-out is compared with this plan.</p>"+
+   (STALE?"<p class=note style='margin-bottom:10px;color:var(--c-amber)'>You didn't punch out on "+esc(dshort(STALE.day))+". That shift was closed at "+esc(tm(STALE.at))+" and flagged for HR.</p>":"")+
+   "<label for=m_in>Today's plan</label><textarea id=m_in rows=8 placeholder='e.g. Morning: finish the Beanlore reel edit and send it for review. Call the 6 new leads in my queue before 2 PM…'></textarea><div class=wc id=m_wc></div>"+
+   (!FOUND&&!o?"<label class=chk><input type=checkbox id=m_pi checked> Punch in now</label>":""),
+  after:function(){var f=function(){var n=words($("m_in").value).length,ok=n>=PLANW;$("m_wc").className="wc "+(ok?"ok":"no");$("m_wc").textContent=n+" / "+PLANW+" words"+(ok?" · ready":"");$("m_ok").disabled=!ok};$("m_in").oninput=f;f()},
+  onOk:function(){var t=$("m_in").value.trim(),w=words(t),u={};w.forEach(function(x){u[x.toLowerCase()]=1});
+   if(w.length<PLANW)return"Write at least "+PLANW+" words. You have "+w.length+".";
+   if(Object.keys(u).length<30)return"The plan repeats the same words. Describe your actual work for today.";
+   var at=new Date().toISOString();D.plan=D.plan||{};D.ses=D.ses||{};D.plan[today]={t:t,w:w.length,at:at};
+   (D.ses[today]=D.ses[today]||{}).in=D.ses[today].in||at;STALE=null;save();
+   var pi=$("m_pi")&&$("m_pi").checked;setTimeout(function(){if(pi&&!openS())punch();toast("Day started","Plan saved at "+tm(at)+". Have a good one.",null,"c-mint")},0)}})}
 
 </script>
 <script>
@@ -901,8 +925,12 @@ async function connect(){var c={collection:sbCol},names=["accounts","portal","hr
  DB=c;MEM.ems_users={};names.forEach(function(nm){snaps[nm].docs.forEach(function(d){take(nm,d)})});
  names.forEach(function(nm){COLS[nm].onSnapshot(function(q){var ch=0;q.docChanges().forEach(function(x){ch+=x.type=="removed"?drop(nm,x.doc):take(nm,x.doc)});if(ch)remote()},function(){sync("err")})});
  live();sync("live")}
-function unplug(){try{if(CHAN)SB.removeChannel(CHAN)}catch(e){}CHAN=null;LIS={};DB=null;COLS={};MEM={};SEEN={};CACHE={};SESS=null;try{S.stop()}catch(e){}
- if(SB)SB.auth.signOut().catch(function(){})}
+/* save anything still waiting (the portal saves a moment after each change) */
+function flushAll(){return Promise.all(Object.keys(WQ).map(function(q){clearTimeout(WT[q]);var i=q.indexOf("/");return flush(q.slice(0,i),q.slice(i+1))}))}
+/* sign-out: finish every pending save first, then close the connection */
+function unplug(){SESS=null;LIS={};try{S.stop()}catch(e){}
+ flushAll().catch(function(){}).then(function(){try{if(CHAN)SB.removeChannel(CHAN)}catch(e){}CHAN=null;DB=null;COLS={};MEM={};SEEN={};CACHE={};
+  if(SB)SB.auth.signOut().catch(function(){})})}
 function friendly(e){var m=(e&&(e.message||e.error_description))||String(e||"");
  if(/invalid login credentials/i.test(m))return"Wrong password. Try again, or use “Forgot password?”.";
  if(/email not confirmed/i.test(m))return"Open the invite email from HR first, then come back.";
@@ -919,7 +947,7 @@ async function resume(){var r=await SB.rpc("portal_session");
  SESS=r.data;amsg("Loading your portal…",null);
  try{await connect()}catch(e){amsg("Signed in, but the portal data didn’t load: "+friendly(e));sync("err");return false}
  users();me=SESS.code;FOUND=!!SESS.is_admin;HRM=FOUND||!!SESS.is_hr;HRV=HRM;D=ld("ems_d_"+me,{})||{};migrate();amsg("");
- enter(FOUND?"fover":HRM?"hemp":"dash");return true}
+ enter(FOUND?"fover":"dash");return true}
 /* invite and password-reset emails land here with the link type in the address */
 function setPw(title){ask({k:"_ Your password",t:title,ok:"Save password",noCancel:true,
  body:"<p class=note style='margin-bottom:12px'>Use at least 10 characters. You’ll sign in with your Employee ID or work email and this password.</p><label for=m_in>New password</label><input id=m_in type=password autocomplete=new-password><label for=m_in2>Type it again</label><input id=m_in2 type=password autocomplete=new-password>",
@@ -928,7 +956,7 @@ function setPw(title){ask({k:"_ Your password",t:title,ok:"Save password",noCanc
   setTimeout(async function(){if(await resume())toast("Password saved","Use it next time you sign in.",null,"c-mint")},0)}})}
 function forgot(){ask({k:"_ Forgot password",t:"Get a reset link.",ok:"Send link",body:"<label for=m_in>Your work email</label><input id=m_in type=email value=\""+esc($("l_id").value.indexOf("@")>0?$("l_id").value.trim():"")+"\">",
  onOk:async function(){var e=$("m_in").value.trim();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))return"Enter your work email.";
-  var r=await SB.auth.resetPasswordForEmail(e,{redirectTo:PORTAL_URL});if(r.error&&/rate limit|too many/i.test(r.error.message))return friendly(r.error);
+  try{await SB.functions.invoke("reset-link",{body:{email:e}})}catch(x){}
   amsg("If that email belongs to an RPS employee, a reset link is on its way. Check your inbox.",true)}})}
 var READY=(async function(){sync("wait");$("dlb").hidden=true;$("hrb").style.display="none";
  if(!SB){amsg("The sign-in service didn’t load. Check your connection and refresh the page.");return}
@@ -981,47 +1009,47 @@ async function login(){audioUnlock();await READY;var raw=$("l_id").value.trim(),
   $("l_pw").value="";await resume()}
  catch(e){amsg(friendly(e))}finally{b.disabled=false}}
 async function hrOpen(){await READY;if(!HRV){$("amsg").textContent="The HR desk is only for the HR team.";return}HRM=true;FOUND=false;me=null;users();enter("hemp")}
-function enter(s){navReset();S.start();$("bell").hidden=!me;$("npanel").hidden=true;if(me)setTimeout(function(){nCheck(true)},700);if(me&&!HRM)setTimeout(locNow,300);$("auth").style.display="none";$("app").style.display="block";nav();hdr();show(s)}
-function migrate(){D.att=D.att||{};D.leaves=D.leaves||[];D.ins=D.ins||{};D.rep=D.rep||{};delete D.sal;delete D.emps;delete D.ev;
+function enter(s){navReset();S.start();$("bell").hidden=!me;$("npanel").hidden=true;if(me)setTimeout(function(){nCheck(true)},700);if(me&&!FOUND)setTimeout(locNow,300);if(me)setTimeout(askPlan,700);$("auth").style.display="none";$("app").style.display="block";nav();hdr();show(s)}
+function migrate(){D.att=D.att||{};D.plan=D.plan||{};D.ses=D.ses||{};D.leaves=D.leaves||[];D.ins=D.ins||{};D.rep=D.rep||{};delete D.sal;delete D.emps;delete D.ev;
  Object.keys(D.att).forEach(function(d){var r=D.att[d];if(!r.s)D.att[d]={s:[{i:r.i,o:r.o}]}});
  D.leaves.forEach(function(l){if(l.t=="Casual")l.t="Personal"});
- if(D.cur&&!openS())D.cur=null;
+ if(D.cur&&!openS())D.cur=null;closeStale();
  if(!D.cur)Object.keys(D.att).forEach(function(d){var s=D.att[d].s,l=s[s.length-1];if(l&&!l.o)D.cur=d});save()}
 function save(){if(me)sv("ems_d_"+me,D)}
 function bye(){unplug();navReset();tClose();$("npanel").hidden=true;$("toasts").innerHTML="";me=null;HRM=false;FOUND=false;PONE=null;$("app").style.display="none";$("auth").style.display="flex";$("amsg").textContent="";$("ef").hidden=true}
 
 /* logout: an employee must file a work report of at least 50 words */
-var MINW=50;
-function logout(){if(HRM){bye();return}
+var MINW=100;
+function logout(){if(!me){bye();return}
  var today=k(new Date()),prev=D.rep[today],o=openS(),acts=myToday();
  ask({k:"_ End of session",t:"Work report.",ok:"Submit &amp; log out",
   body:"<p class=note style='margin-bottom:12px'>Write what you worked on, what is done, what is pending and any blockers. At least "+MINW+" words are needed before you can log out.</p>"+
    (acts.length?"<div class=mini>Your task activity today</div><div class=note style='margin-bottom:10px'>"+acts.map(esc).join("<br>")+"</div>":"")+
    "<label for=m_in>Today's report</label><textarea id=m_in rows=8 placeholder='e.g. Finished the script draft for the house shoot reel and shared it with the editor. Pending: captions for 3 posts…'>"+esc(prev?prev.t:"")+"</textarea>"+
-   "<div class=wc id=m_wc></div>"+(o?"<label class=chk><input type=checkbox id=m_po checked> Also punch out now (shift running since "+tm(o.i)+")</label>":""),
+   "<div class=wc id=m_wc></div>"+(D.plan&&D.plan[today]?"<details style='margin-top:8px'><summary class=sm style='cursor:pointer'>Your plan this morning</summary><div class=note style='margin-top:6px'>"+esc(D.plan[today].t)+"</div></details>":"")+(o?"<p class=note style='margin-top:6px'>You'll be punched out automatically (shift running since "+tm(o.i)+").</p>":""),
   after:function(){var f=function(){var w=words($("m_in").value),n=w.length,ok=n>=MINW;$("m_wc").className="wc "+(ok?"ok":"no");$("m_wc").textContent=n+" / "+MINW+" words"+(ok?" · ready":"");$("m_ok").disabled=!ok};$("m_in").oninput=f;f()},
   onOk:function(){var t=$("m_in").value.trim(),w=words(t),u={};w.forEach(function(x){u[x.toLowerCase()]=1});
    if(w.length<MINW)return"Write at least "+MINW+" words. You have "+w.length+".";
    if(Object.keys(u).length<20)return"The report repeats the same words. Describe your actual work.";
    D.rep[today]={t:t,w:w.length,at:new Date().toISOString(),n:(prev&&prev.n||0)+1};
-   save();var po=$("m_po")&&$("m_po").checked&&openS();
-   setTimeout(async function(){if(po){var ok=await punch();if(!ok){ask({k:"_ Still punched in",t:"You’re still punched in.",ok:"OK",noCancel:true,body:"<p class=note>Your work report is saved. Punch out again when you’re ready, then log out.</p>",onOk:function(){}});return}}bye()},0)}})}
+   D.ses=D.ses||{};(D.ses[today]=D.ses[today]||{}).out=new Date().toISOString();save();var po=openS();
+   setTimeout(async function(){try{await SB.rpc("queue_eod_mail")}catch(e){}if(po){var ok=await punch();await flushAll();if(!ok){ask({k:"_ Still punched in",t:"You’re still punched in.",ok:"OK",noCancel:true,body:"<p class=note>Your work report is saved. Punch out again when you’re ready, then log out.</p>",onOk:function(){}});return}}bye()},0)}})}
 function myToday(){var t=k(new Date()),out=[];tasks().forEach(function(x){(x.log||[]).forEach(function(l){if(l.by==me&&l.at.slice(0,10)==t)out.push(l.a+" · "+x.title)})});return out.slice(0,8)}
 
 /* another device changed the data: refresh lists, never half-typed forms */
 function remote(){if(!me&&!HRM)return;users();setTimeout(function(){nCheck();tpRefresh()},0);
  if(me&&!U[me]){bye();$("amsg").textContent="Your account was closed by HR.";return}
- if(me){var nd=MEM["ems_d_"+me];if(nd&&nd!==D){D=nd;D.att=D.att||{};D.leaves=D.leaves||[];D.ins=D.ins||{};D.rep=D.rep||{}}}
+ if(me){var nd=MEM["ems_d_"+me];if(nd&&nd!==D){D=nd;D.att=D.att||{};D.leaves=D.leaves||[];D.ins=D.ins||{};D.rep=D.rep||{};D.plan=D.plan||{};D.ses=D.ses||{}}}
  hdr();if(me)pbtn();var on=document.querySelector(".sec.on");if(!on)return;
  if(on.id=="dash")R.dash();else if(on.id=="task")R.task(true);else if(on.id=="pay")R.pay();else if(on.id=="hemp")R.hemp(true);else if(on.id=="hrep")R.hrep();else if(on.id=="fover")R.fover();else if(on.id=="fperf")R.fperf();else if(on.id=="ftask")R.ftask();else if(on.id=="hloc")R.hloc()}
 function hdr(){if(FOUND){var f=U[me]||{};$("h_av").textContent=ini(f.name);$("h_n").textContent=f.name||me;$("h_r").textContent="Founder · "+me;$("shc").hidden=true;return}
- if(HRM){var hu=me&&U[me];$("h_av").textContent=hu?ini(hu.name):"HR";$("h_n").textContent=hu?hu.name:"HR desk";$("h_r").textContent=hu?"HR desk · "+me:"Rock Papers Scissors";$("shc").hidden=true;return}
+ if(HRM){var hu=me&&U[me];$("h_av").textContent=hu?ini(hu.name):"HR";$("h_n").textContent=hu?hu.name:"HR desk";$("h_r").textContent=hu?"HR · "+me:"Rock Papers Scissors";$("shc").hidden=!me;return}
  var u=U[me]||{};$("shc").hidden=false;$("h_av").textContent=ini(u.name);$("h_n").textContent=u.name||me;$("h_r").textContent=u.role||me}
 var EMN=[["dash","Dashboard"],["task","Tasks"],["pay","Salary &amp; Payslip"],["auth2","Authentication"]],
     FDN=[["fover","Overview"],["fperf","Performance"],["hrep","Work reports"],["ftask","All tasks"],["task","Assign tasks"],["hemp","Employees"],["hpay","Payroll"],["auth2","ID &amp; visiting cards"]],
-    HRN=[["hemp","Employees"],["hpay","Payroll"],["hrep","Work reports"],["auth2","ID &amp; visiting cards"]];
-function nav(){var L=(FOUND?FDN:HRM?HRN:EMN).concat(S.nav());$("nav").innerHTML="<div class=logo><b>rock</b><em>·</em><span>papers</span><em>·</em><b>scissors</b></div>"+
- L.map(function(x,i){return"<a href='#' data-s='"+x[0]+"'><small>"+p2(i+1)+"</small>"+x[1]+"</a>"}).join("")+
+    HRN=[["dash","Dashboard"],["task","Tasks"],["pay","Salary &amp; Payslip"],["hemp","Employees"],["hpay","Payroll"],["hrep","Work reports"],["auth2","ID &amp; visiting cards"]];
+function nav(){var L=(FOUND?FDN:HRM?HRN:EMN).concat(S.nav());$("nav").innerHTML="<button type=button class='logo lbtn' onclick='home()' aria-label='Home'><b>rock</b><em>·</em><span>papers</span><em>·</em><b>scissors</b></button>"+
+ L.map(function(x,i){return"<a href='#' data-s='"+x[0]+"'>"+x[1]+"</a>"}).join("")+
  "<div class=sp></div><a href='#' id=lo><small>↩</small>"+(HRM&&!FOUND&&!me?"Exit HR desk":"Logout")+"</a>";
  document.querySelectorAll("#nav a[data-s]").forEach(function(a){a.onclick=function(e){e.preventDefault();show(a.dataset.s)}});
  $("lo").onclick=function(e){e.preventDefault();logout()}}
@@ -1179,10 +1207,10 @@ var R={
  hrep:function(){var ids=Object.keys(U).sort(function(a,b){return String(U[a].name).localeCompare(U[b].name)}),e=$("rp_e"),v=e.value;
   e.innerHTML="<option value=''>All employees</option>"+ids.map(function(id){return"<option value=\""+esc(id)+"\">"+esc(U[id].name)+"</option>"}).join("");if(v&&U[v])e.value=v;
   if(!$("rp_m").value)$("rp_m").value=k(new Date()).slice(0,7);var mo=$("rp_m").value,who=e.value?[e.value]:ids,rows=[];
-  who.forEach(function(id){var d=ld("ems_d_"+id,{})||{},R2=d.rep||{},A=d.att||{},days={};Object.keys(R2).concat(Object.keys(A)).forEach(function(x){if(x.slice(0,7)==mo)days[x]=1});
-   Object.keys(days).forEach(function(x){rows.push({id:id,d:x,r:R2[x],a:A[x]})})});
+  who.forEach(function(id){var d=ld("ems_d_"+id,{})||{},R2=d.rep||{},A=d.att||{},days={};Object.keys(R2).concat(Object.keys(A)).concat(Object.keys(d.plan||{})).forEach(function(x){if(x.slice(0,7)==mo)days[x]=1});
+   Object.keys(days).forEach(function(x){rows.push({id:id,d:x,r:R2[x],a:A[x],p:(d.plan||{})[x],s:(d.ses||{})[x]})})});
   rows.sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:String(nm(a.id)).localeCompare(nm(b.id))});
-  $("rp_l").innerHTML=rows.map(function(x){var h=x.a?dur(dayMs(x.a,new Date())):"--";return"<div class=rep><div class=tkh><b>"+esc(nm(x.id))+" · "+esc(dshort(x.d))+"</b>"+(x.r?"<span class='tag c-mint'>"+x.r.w+" words</span>":"<span class='tag c-fire'>No report</span>")+"</div><div class=tkm>Hours "+h+(x.r?" · filed "+tm(x.r.at)+(x.r.n>1?" · updated "+x.r.n+"×":""):"")+"</div>"+(x.r?"<p>"+esc(x.r.t)+"</p>":"")+"</div>"}).join("")||"<div class=emp>No reports for this month yet.</div>"}};
+  $("rp_l").innerHTML=rows.map(function(x){var h=x.a?dur(dayMs(x.a,new Date())):"--";return"<div class=rep><div class=tkh><b>"+esc(nm(x.id))+" · "+esc(dshort(x.d))+"</b>"+(x.r?"<span class='tag c-mint'>"+x.r.w+" words</span>":"<span class='tag c-fire'>No report</span>")+"</div><div class=tkm>Hours "+h+(x.r?" · filed "+tm(x.r.at)+(x.r.n>1?" · updated "+x.r.n+"×":""):"")+"</div>"+"<div class=tkm>Signed in "+(x.s&&x.s.in?tm(x.s.in):"–")+" · signed out "+(x.s&&x.s.out?tm(x.s.out):"–")+(x.a&&x.a.s.some(function(q){return q.auto})?" · <span class='tag c-amber'>Punch-out missed, closed automatically</span>":"")+"</div>"+(x.p?"<p><b>Plan:</b> "+esc(x.p.t)+"</p>":"<p class=sm>No morning plan</p>")+(x.r?"<p><b>Report:</b> "+esc(x.r.t)+"</p>":"")+"</div>"}).join("")||"<div class=emp>No reports for this month yet.</div>"}};
 
 function addLeave(){var l={t:$("lt").value,f:$("lf").value,to:$("lto").value,r:$("lr").value.trim()},m=$("lmsg");m.style.color="var(--bad)";
  if(!l.f||!l.to){m.textContent="Pick both dates.";return}if(l.to<l.f){m.textContent="'To' date is before 'From' date.";return}
@@ -1276,7 +1304,7 @@ async function eCreate(){var o=eRead(),id=$("ef_id").value.trim().toUpperCase(),
  try{var r=await SB.functions.invoke("invite-employee",{body:{email:u.email,name:u.name,code:id,dept:u.dept,roles:roles,portal:u}});
   if(r.error){var msg=r.error.message;try{var j=await r.error.context.json();if(j&&j.error)msg=j.error}catch(x){}throw new Error(msg)}
   U[id]=u;sv("ems_users",U);R.hemp(true);
-  emsg("Done. "+o.name+" ("+id+") gets an invite email at "+u.email+" to set their password"+(roles.length?", with "+roles.join(", ").replace(/_/g," ")+" access.":". Give them sales access from Sales access when needed."),true);
+  emsg("Done. "+o.name+" ("+id+") gets a welcome email at "+u.email+" (founder in CC) with a link to set their password"+(roles.length?" and "+roles.join(", ").replace(/_/g," ")+" access.":". Add roles any time from Access & roles."),true);
   $("ef").querySelectorAll("button.btn:not(.g)").forEach(function(x){x.disabled=true})}
  catch(e){b.disabled=false;emsg(/Failed to send a request|FunctionsFetchError|not found|404/i.test(String(e&&e.message))?"The invite service isn’t switched on yet. Ask Bruce to finish the set-up.":S.err(e))}}
 function diff(id){var u=U[id],o=eRead(),ch=[],oi=insOf(id,ld("ems_d_"+id,{}));
@@ -1305,7 +1333,7 @@ function eConfirm(manual){var p=PEND;if(!p){emsg("Send a verification code first
  sv("ems_users",U);PEND=null;R.hemp(true);$("ef_v").innerHTML="";$("ef_go").disabled=false;emsg("Saved. "+u.name+"’s profile is updated.",true)}
 function ePw(id){var u=U[id];ask({k:"_ Password",t:"Send "+u.name+" a password reset link?",ok:"Send reset link",
  body:"<p class=note>A link to choose a new password goes to "+esc(u.email||"(no email on file)")+". Their current password keeps working until they change it. HR never sees passwords.</p>",
- onOk:async function(){if(!u.email)return"Add an email to this employee first.";var r=await SB.auth.resetPasswordForEmail(u.email,{redirectTo:PORTAL_URL});if(r.error)return S.err(r.error);
+ onOk:async function(){if(!u.email)return"Add an email to this employee first.";var r=await SB.functions.invoke("reset-link",{body:{email:u.email}});if(r.error)return S.err(r.error);
   users();U[id].hist=(U[id].hist||[]).concat([{at:new Date().toISOString(),a:"Password reset link sent by HR"}]).slice(-30);sv("ems_users",U);
   ask({k:"_ Done",t:"Reset link sent.",ok:"Done",noCancel:true,body:"<p class=note>Ask "+esc(u.name.split(" ")[0])+" to check "+esc(u.email)+" (and spam).</p>",onOk:function(){}});return false}})}
 function eDel(id){var u=U[id];if(u.owner){ask({k:"_ Founder",t:"The founder account can’t be removed.",ok:"OK",noCancel:true,body:"",onOk:function(){}});return}ask({k:"_ Remove employee",t:"Remove "+u.name+" from the portal?",ok:"Remove employee",
