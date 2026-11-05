@@ -33,7 +33,7 @@ jobs:
           RPS_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease -PversionCode=${{ github.run_number }} --no-daemon
+          ./gradlew assembleRelease --no-daemon
           cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/RockPapersScissors.apk"
       - uses: actions/upload-artifact@v4
         with: { name: RockPapersScissors-apk, path: RockPapersScissors.apk }
