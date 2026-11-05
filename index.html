@@ -664,7 +664,7 @@ async function handoff(id){var m=$("vm_"+id),who=$("vh_"+id).value;if(!who){m.st
  catch(e){m.style.color="var(--bad)";m.textContent=err(e)}}
 
 /* ---------- leads ---------- */
-var COLS="id,lead_code,status,custom_stage,assigned_to,created_by,next_action_at,estimated_value,service_interests,source_evidence_url,source_reference,contact_basis,status_reason,lost_reason,do_not_contact,created_at,company:companies(id,name,website,domain,city,industry),contact:contacts(id,full_name,designation,phone_e164,email),source:lead_sources(source_name),owner:profiles!leads_assigned_to_fkey(full_name,employee_code)";
+var COLS="id,lead_code,status,custom_stage,assigned_to,created_by,next_action_at,estimated_value,service_interests,source_evidence_url,source_reference,contact_basis,status_reason,why_now,why_now_signal_date,why_now_found_at,lost_reason,do_not_contact,created_at,company:companies(id,name,website,domain,city,industry),contact:contacts(id,full_name,designation,phone_e164,email),source:lead_sources(source_name),owner:profiles!leads_assigned_to_fkey(full_name,employee_code)";
 async function leads(){$("sl_add").hidden=$("sl_imp").hidden=!(FOUND||any(["lead_generation","sales"]));
  try{await staff();await opts();LEADS=await q(sb().from("leads").select(COLS).order("created_at",{ascending:false}).limit(1000));
   var st=$("sl_st"),v=st.value;st.innerHTML="<option value=''>All stages</option><option value='open'>All open</option>"+Object.keys(ST).map(function(s){return"<option value='"+s+"'>"+ST[s][0]+"</option>"}).join("")+(OPTS.stage.length?"<optgroup label='Your own stages'>"+OPTS.stage.map(function(x){return"<option value='c:"+esc(x[0])+"'>"+esc(x[1])+"</option>"}).join("")+"</optgroup>":"");st.value=PST!=null?PST:v;PST=null;
@@ -746,7 +746,7 @@ async function open(id){OPEN=id;var P=$("lp");P.hidden=false;$("lp_h").innerHTML
    sb().from("lead_appointments").select("id,starts_at,mode,meeting_url,location_text,status").eq("lead_id",id).order("starts_at",{ascending:false}),
    sb().from("lead_qualifications").select("total_score,requirement_summary,created_at").eq("lead_id",id).order("created_at",{ascending:false}).limit(1)]);
   var H=res[0].data||[],A=res[1].data||[],F=res[2].data||[],AP=res[3].data||[],QL=(res[4].data||[])[0],c=l.company||{},p=l.contact||{},who=function(u){var x=STAFF.filter(function(s){return s.id==u})[0];return x?x.name:"Someone"};
-  $("lp_h").innerHTML="<span class=mono>"+esc(l.lead_code)+" · "+esc((l.source||{}).source_name||"No source")+"</span><h3>"+esc(c.name)+"</h3><div class=tpmeta>"+tagS(l.status)+tagC(l.custom_stage)+(l.do_not_contact?"<span class='tag c-fire'>Do not contact</span>":"")+(QL?"<span class='tag c-violet'>Score "+QL.total_score+"/100</span>":"")+(l.estimated_value?"<span class=tag>"+inr(l.estimated_value)+"</span>":"")+"</div>";
+  $("lp_h").innerHTML="<h3>"+esc(c.name)+"</h3><div class=tpmeta>"+tagS(l.status)+tagC(l.custom_stage)+(l.do_not_contact?"<span class='tag c-fire'>Do not contact</span>":"")+(QL?"<span class='tag c-violet'>Score "+QL.total_score+"/100</span>":"")+(l.estimated_value?"<span class=tag>"+inr(l.estimated_value)+"</span>":"")+"</div>";
   var openF=F.filter(function(f){return f.status=="open"||f.status=="overdue"}),apt=AP.filter(function(a){return a.status=="proposed"||a.status=="confirmed"})[0];
   var ph=p.phone_e164||"";
   var acts="<div class=kvs style='margin:12px 0'>"+
@@ -758,7 +758,11 @@ async function open(id){OPEN=id;var P=$("lp");P.hidden=false;$("lp_h").innerHTML
    "<div class=kv><span class=mono>Services</span><b style='white-space:normal;text-align:right'>"+esc((l.service_interests||[]).join(", ")||"–")+"</b></div>"+
    "<div class=kv style='align-items:center'><span class=mono>Owner</span><b>"+esc((l.owner||{}).full_name||"Unassigned")+(canAssign()?" <button class='btn g s' style='margin-left:8px' onclick=\"S.assign()\">"+(l.assigned_to?"Change":"Assign")+"</button>":"")+"</b></div>"+
    "<div class=kv><span class=mono>Next action</span><b"+(late(l.next_action_at)?" style='color:var(--bad)'":"")+">"+esc(l.next_action_at?when(l.next_action_at):"–")+"</b></div>"+
-   (l.status_reason?"<div class=kv><span class=mono>Note</span><b style='white-space:normal;text-align:right'>"+esc(l.status_reason)+"</b></div>":"")+"</div>";
+   "</div>";
+  var dOnly=function(d){if(!d)return"";var x=new Date(String(d).length<=10?d+"T00:00:00":d);return x.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})};
+  var wn=l.why_now||(/^why now:/i.test(l.status_reason||"")?l.status_reason.slice(8).trim():"");
+  if(wn)acts+="<div class=mini>Why now</div><div class=note style='white-space:normal;margin-bottom:4px'>"+esc(wn)+"</div><div class=sm style='margin-bottom:12px'>"+
+   (l.why_now_signal_date?"Happened "+esc(dOnly(l.why_now_signal_date))+" · ":"")+"Came to us "+esc(dOnly(l.why_now_found_at||l.created_at))+(l.source_evidence_url?" · <a target=_blank rel=noopener href='"+esc(l.source_evidence_url)+"'>Proof</a>":"")+"</div>";
   var B=[];
   if(l.status=="interested")B.push(["Book discovery meeting","S.meet()"]);
   if(apt)B.push(["Meeting done","S.met('"+apt.id+"')"]);
@@ -772,14 +776,18 @@ async function open(id){OPEN=id;var P=$("lp");P.hidden=false;$("lp_h").innerHTML
   var T=[];H.forEach(function(h){T.push([h.changed_at,"<div class=tpsys><b>"+esc(who(h.changed_by))+"</b> moved it to "+esc((ST[h.new_status]||[h.new_status])[0])+(h.reason?"<span>"+esc(h.reason)+"</span>":"")+"</div>"])});
   A.forEach(function(a){T.push([a.occurred_at,"<div class='tpm"+(a.employee_id==SESS.id?" me":"")+"'><div class=tpb><span class=tpl>"+esc(a.activity_type=="call"?"Call · "+(a.outcome||"").replace(/_/g," "):a.activity_type.replace(/_/g," "))+"</span>"+esc(a.notes||"")+"</div><span class=sm>"+esc(who(a.employee_id))+" · "+esc(when(a.occurred_at))+"</span></div>"])});
   T.sort(function(a,b){return a[0]<b[0]?1:-1});
-  $("lp_b").innerHTML=acts+"<div class=mini>History</div><div style='display:flex;flex-direction:column;gap:8px'>"+(T.map(function(t){return t[1]}).join("")||"<p class=note>Nothing yet.</p>")+"</div>";
+  var NT=[];A.forEach(function(a){if(a.notes&&String(a.notes).trim())NT.push([a.occurred_at,a.activity_type=="call"?"Call · "+(a.outcome||"").replace(/_/g," "):a.activity_type=="note"?"Note":a.activity_type.replace(/_/g," "),a.notes,a.employee_id])});
+  H.forEach(function(h){if(h.reason&&h.reason!="Lead created"&&!/^why now:/i.test(h.reason))NT.push([h.changed_at,"Stage · "+((ST[h.new_status]||[h.new_status])[0]),h.reason,h.changed_by])});
+  NT.sort(function(a,b){return a[0]<b[0]?1:-1});
+  var notesH="<div class=mini>Notes"+(NT.length?" ("+NT.length+")":"")+"</div><div style='display:flex;flex-direction:column;gap:8px;margin-bottom:14px'>"+(NT.map(function(x){return"<div class='tpm"+(x[3]==SESS.id?" me":"")+"'><div class=tpb><span class=tpl>"+esc(when(x[0]))+" · "+esc(x[1])+"</span>"+esc(x[2])+"</div><span class=sm>"+esc(who(x[3]))+"</span></div>"}).join("")||"<p class=note>No notes yet. Use “Add note” after each call so the next call starts with the full story.</p>")+"</div>";
+  $("lp_b").innerHTML=acts+notesH+"<div class=mini>History</div><div style='display:flex;flex-direction:column;gap:8px'>"+(T.map(function(t){return t[1]}).join("")||"<p class=note>Nothing yet.</p>")+"</div>";
   OPEN={id:id,l:l}}
  catch(e){$("lp_h").innerHTML="<p class=note style='color:var(--bad)'>"+esc(err(e))+"</p>"}}
 function close(){$("lp").hidden=true;OPEN=null}
 async function after(msg){toast("Saved",msg,null,"c-mint");var id=OPEN&&OPEN.id;if(id)open(id);refresh()}
 function lid(){return OPEN&&OPEN.id}
-function note(){ask({k:"_ Note",t:"Add a note.",ok:"Save note",body:"<p class=note style='margin-bottom:10px'>The note is saved in this lead’s <b>History</b> (lower in this panel), with your name and the time. Everyone working on the lead can read it.</p><label for=m_in>Note</label><textarea id=m_in rows=4 placeholder='What happened, what they need, what’s next'></textarea>",
- onOk:async function(){var t=$("m_in").value.trim();if(!t)return"Write the note first.";try{await q(sb().from("lead_activities").insert({lead_id:lid(),employee_id:SESS.id,activity_type:"note",notes:t}));after("Note saved in this lead’s History.")}catch(e){return err(e)}}})}
+function note(){ask({k:"_ Note",t:"Add a note.",ok:"Save note",body:"<p class=note style='margin-bottom:10px'>The note is added to this lead’s <b>Notes</b> with today’s date and your name. Older notes stay; nothing is replaced. Everyone working on the lead can read it.</p><label for=m_in>Note</label><textarea id=m_in rows=4 placeholder='What happened, what they need, what’s next'></textarea>",
+ onOk:async function(){var t=$("m_in").value.trim();if(!t)return"Write the note first.";try{await q(sb().from("lead_activities").insert({lead_id:lid(),employee_id:SESS.id,activity_type:"note",notes:t}));after("Note saved with today’s date.")}catch(e){return err(e)}}})}
 async function fup(){await opts();ask({k:"_ Follow-up",t:"Schedule a follow-up.",ok:"Schedule",body:"<label for=m_d>When</label><input id=m_d type=datetime-local value='"+localNow(24)+"'><label for=m_ty>Type</label>"+pick("m_ty","followup_type",OPTS.followup_type,"follow_up")+"<label for=m_in>What to do</label><input id=m_in placeholder='e.g. Send the reels portfolio'>",
  onOk:async function(){if(!$("m_d").value)return"Pick a date and time.";try{var ty=await picked("m_ty","followup_type");await q(sb().from("followups").insert({lead_id:lid(),assigned_to:SESS.id,due_at:isoLocal($("m_d").value),task_type:ty,description:$("m_in").value.trim()||null}));after("Follow-up scheduled. It shows in Follow-ups and moves the lead’s next action.")}catch(e){return err(e)}}})}
 async function fdone(id){try{await q(sb().from("followups").update({status:"completed"}).eq("id",id));after("Follow-up done.")}catch(e){$("lp_msg").style.color="var(--bad)";$("lp_msg").textContent=err(e)}}
