@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#05060A">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <body>
 <title>Employee Portal — Rock Papers Scissors</title>
@@ -2135,5 +2140,6 @@ document.addEventListener("keydown",function(e){if(e.target&&e.target.id=="mayaI
   cur.style.transform="translate3d("+x.toFixed(1)+"px,"+y.toFixed(1)+"px,0)";cur.classList.toggle("hot",hot);cur.classList.toggle("txt",tf);requestAnimationFrame(frame)}
  requestAnimationFrame(frame)})();
 </script>
+<script>if("serviceWorker" in navigator)window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})});</script>
 </body>
 </html>
