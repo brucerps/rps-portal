@@ -2,6 +2,15 @@
   "appId": "in.rockpapersscissors.portal",
   "appName": "Rock Papers Scissors",
   "webDir": "www",
-  "server": { "url": "https://brucerps.github.io/rps-portal/?source=app", "allowNavigation": ["brucerps.github.io", "*.supabase.co"] },
-  "android": { "backgroundColor": "#05060A" }
+  "server": {
+    "url": "https://brucerps.github.io/rps-portal/?source=app",
+    "allowNavigation": [
+      "brucerps.github.io",
+      "portal.rockpapersscissors.in",
+      "*.supabase.co"
+    ]
+  },
+  "android": {
+    "backgroundColor": "#05060A"
+  }
 }
