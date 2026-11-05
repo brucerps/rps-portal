@@ -255,6 +255,28 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--ion);outline-offset
 .mb-in{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}.mb-in textarea{flex:1;resize:none;min-height:44px;max-height:120px;margin:0}
 @media (max-width:600px){.maya-box{right:0;bottom:0;width:100vw;height:100dvh;border-radius:0}.maya-fab{right:16px;bottom:16px}.maya-fab b{display:none}.maya-fab{padding:8px}}
 .lbtn{background:none;border:0;padding:0;color:inherit;cursor:pointer;-webkit-user-select:none;user-select:none;text-align:left;font-size:20px}.lbtn:focus-visible{outline:2px solid var(--fire);outline-offset:4px;border-radius:6px}aside .lbtn{padding:4px 12px 22px}
+
+/* ---------- premium pass: one accent (RPS red), quiet glass everywhere else ---------- */
+:root{--c-ion:#A3AAB8;--c-mint:#93B8A2;--c-amber:#C8A46E;--c-violet:#A9A3BA;--c-cyan:#98AFB8;--c-fire:#E5484D;--ok:#93B8A2;--bad:#E5484D}
+html,body{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='M2.5 8.5 20.4 14.5M8.5 2.5 14.5 20.4' stroke='%2305060A' stroke-width='4.4'/%3E%3Ccircle cx='24.3' cy='16' r='4.1' stroke='%2305060A' stroke-width='4.4'/%3E%3Ccircle cx='16' cy='24.3' r='4.1' stroke='%2305060A' stroke-width='4.4'/%3E%3Cpath d='M2.5 8.5 20.4 14.5M8.5 2.5 14.5 20.4' stroke='%23F2F1EC' stroke-width='2.1'/%3E%3Ccircle cx='24.3' cy='16' r='4.1' stroke='%23F2F1EC' stroke-width='2.1'/%3E%3Ccircle cx='16' cy='24.3' r='4.1' stroke='%23F2F1EC' stroke-width='2.1'/%3E%3C/g%3E%3Ccircle cx='11.6' cy='11.6' r='2' fill='%23E10600' stroke='%2305060A' stroke-width='.8'/%3E%3C/svg%3E") 5 5,auto}
+a,button,select,label,summary,[onclick],.btn,.stat.go,.tkt,.lbtn,.seg button,aside a{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='M2.5 8.5 20.4 14.5M8.5 2.5 14.5 20.4' stroke='%2305060A' stroke-width='4.4'/%3E%3Ccircle cx='24.3' cy='16' r='4.1' stroke='%2305060A' stroke-width='4.4'/%3E%3Ccircle cx='16' cy='24.3' r='4.1' stroke='%2305060A' stroke-width='4.4'/%3E%3Cpath d='M2.5 8.5 20.4 14.5M8.5 2.5 14.5 20.4' stroke='%23E10600' stroke-width='2.1'/%3E%3Ccircle cx='24.3' cy='16' r='4.1' stroke='%23E10600' stroke-width='2.1'/%3E%3Ccircle cx='16' cy='24.3' r='4.1' stroke='%23E10600' stroke-width='2.1'/%3E%3C/g%3E%3Ccircle cx='11.6' cy='11.6' r='2' fill='%23E10600' stroke='%2305060A' stroke-width='.8'/%3E%3C/svg%3E") 5 5,pointer}
+input,textarea,[contenteditable]{cursor:text}.btn[disabled]{cursor:not-allowed}
+.card{background:rgba(14,16,22,.55);border-color:rgba(214,222,238,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.stat,.stat.c-ion,.stat.c-mint,.stat.c-amber,.stat.c-violet,.stat.c-cyan,.stat.c-fire{background:rgba(14,16,22,.55);border-color:rgba(214,222,238,.08)}
+.stat::after{display:none}.stat:hover{transform:translateY(-2px)}
+.stat .ic{display:none}
+.stat b{font-weight:700;letter-spacing:-.04em}
+.stat span{color:var(--dust)}
+.stat.c-fire span::before,.stat.c-amber span::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--c);margin-right:8px;vertical-align:2px}
+.tag{background:rgba(255,255,255,.035);border:1px solid rgba(214,222,238,.12);color:var(--soft)}
+.tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c,var(--c-ion));flex:none}
+.toast,.toast.hot{border:1px solid rgba(214,222,238,.14);border-left:1px solid rgba(214,222,238,.14);background:rgba(14,16,22,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+aside a.on{background:rgba(255,255,255,.05);box-shadow:inset 2px 0 0 var(--fire)}
+.ac,.adm,.hero{background:rgba(14,16,22,.55);border-color:rgba(214,222,238,.08)}
+.adm{box-shadow:inset 0 1px 0 rgba(225,6,0,.35)}
+.mf-nd{background:rgba(255,255,255,.03);border-color:rgba(214,222,238,.12)}
+.bar i{box-shadow:none}
+.av{background:var(--fire)}.maya-av{background:var(--fire)}
 </style>
 <canvas id="space"></canvas>
 
