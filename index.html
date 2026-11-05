@@ -142,6 +142,7 @@ th{font:500 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;col
 tbody tr{transition:background .2s}tbody tr:hover{background:rgba(255,255,255,.025)}
 td.n,th.n{text-align:right;font-family:var(--mono)}
 .emp{color:var(--dust);text-align:center;padding:22px}
+.qadd{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 14px}.qchip{background:none;border:1px dashed var(--line);color:var(--soft);border-radius:999px;padding:7px 12px;font:400 13px var(--body);cursor:pointer}.qchip:hover{border-color:var(--white);color:var(--white)}.qchip:focus-visible{outline:2px solid var(--white);outline-offset:2px}
 .qrow{display:grid;grid-template-columns:34px minmax(0,1fr) 72px 130px 120px 40px;gap:10px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}.qrow input{margin:0}.qsv{display:flex;flex-direction:column;gap:6px}.qsv .qd{font-size:13px;padding:9px 14px}.qno{font-family:var(--mono);padding-top:13px;color:var(--dust)}.qam{text-align:right;padding-top:13px;font:500 13px var(--mono)}.qh{font:500 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dust);padding-bottom:6px}
 @media(max-width:720px){.qrow{grid-template-columns:28px minmax(0,1fr) 64px;}.qrow .qsv{grid-column:2/4}.qrow>input{grid-column:auto}.qh{display:none}.qam{grid-column:2/3;text-align:left;padding-top:0}}
 .tag{display:inline-flex;align-items:center;gap:6px;font:500 11px var(--mono);letter-spacing:.06em;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--c,var(--c-ion)) 16%,transparent);color:var(--c,var(--c-ion))}
@@ -1655,7 +1656,7 @@ function draw(){if(EDIT){form();return}var L=allQ(),cnt={pending:0,approved:0,se
  $("qt_k").innerHTML=kt(cnt.pending?"c-amber":"c-mint","⧗",cnt.pending,FOUND?"Waiting for your approval":"Waiting for approval")+kt("c-mint","✓",cnt.approved,"Approved, not sent yet")+kt("c-cyan","↗",cnt.sent,"Sent to clients")+kt("c-violet","₹",val?inr(Math.round(val)):"–","Accepted value");
  var F=L.filter(function(q){var s=state(q);return QF=="all"||(QF=="pending"?s=="pending"||s=="changes":QF=="approved"?s=="approved":s=="sent"||s=="accepted"||s=="declined")});
  $("qt_list").innerHTML=F.length?"<div class=tw><table><thead><tr><th>Quote</th><th>Client</th><th class=n>Total</th><th>Status</th>"+(HRM?"<th>By</th>":"")+"<th></th></tr></thead><tbody>"+F.map(function(q){var s=state(q),a=qa(keyOf(q)),t=sums(q).tot,ok=oks()[keyOf(q)];
-  var b=["<button class='btn g s' onclick=\"Q.open("+a+")\">"+(q.by==me&&["draft","changes","pending"].indexOf(s)>=0?"Edit":"Open")+"</button>","<button class='btn g s' onclick=\"Q.pdf("+a+")\">"+(["approved","sent","accepted","declined"].indexOf(s)>=0?"PDF":"Preview")+"</button>"];
+  var b=["<button class='btn g s' onclick=\"Q.open("+a+")\">"+(q.by==me&&["draft","changes","pending"].indexOf(s)>=0?"Edit":"Open")+"</button>",(["approved","sent","accepted","declined"].indexOf(s)>=0?"<button class='btn s' onclick=\"Q.pdf("+a+")\">↓ PDF</button>":"<button class='btn g s' onclick=\"Q.preview("+a+")\">Preview</button>")];
   if(FOUND&&s=="pending")b.unshift("<button class='btn s' onclick=\"Q.approve("+a+")\">Approve</button>","<button class='btn g s' onclick=\"Q.changes("+a+")\">Ask for changes</button>");
   fixQ(q);return"<tr><td style='font-family:var(--mono)'>"+esc(q.no||"(not saved)")+"<br><span class=sm>"+esc(dshort(q.date))+"</span></td><td><b>"+esc(q.client.name||"(no client yet)")+"</b>"+(q.client.attn?"<br><span class=sm>"+esc(q.client.attn)+"</span>":"")+"</td><td class=n>"+inr(Math.round(t))+"</td><td>"+tagQ(q)+(s=="changes"&&ok&&ok.note?"<br><span class=sm>"+esc(ok.note)+"</span>":"")+"</td>"+(HRM?"<td>"+esc(nm(q.by))+"</td>":"")+"<td><div style='display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end'>"+b.join("")+"</div></td></tr>"}).join("")+"</tbody></table></div>"
   :"<p class=note style='padding:14px 0'>"+(L.length?"Nothing in this view.":"No quotations yet. Press “New quotation” to make the first one.")+"</p>"}
@@ -1680,7 +1681,8 @@ function form(){var q=EDIT,R0=ro(),s=state(q),ok=oks()[keyOf(q)],dis=R0?" disabl
   "<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0 14px'>"+fld("q_cn","Client (company)",q.client.name,"e.g. Vinayaka Arcade")+fld("q_ca","Attention (person)",q.client.attn,"e.g. Manjula Devi")+fld("q_cp","Phone",q.client.phone,"e.g. +91 98450 12345","tel")+fld("q_ce","Email",q.client.email,"e.g. name@company.com","email")+fld("q_cd","Address",q.client.addr,"City / area")+"</div>"+
   "<div class=kvs style='margin:4px 0 14px'><div class=kv><span class=mono>Quote no.</span><b>"+(q.no?esc(q.no):esc(fmtNo(seq()+1))+" <span class=sm>(given when you save)</span>")+"</b></div><div class=kv><span class=mono>Date</span><b>"+esc(dshort(q.date))+"</b></div><div class=kv><span class=mono>Valid until (payment within 10 days)</span><b>"+esc(dshort(q.valid))+"</b></div></div>"+
   "<div class=mini>Services</div><div class='qrow qh'><span>No.</span><span>Service</span><span>Qty</span><span>Rate (₹)</span><span style='text-align:right'>Amount (₹)</span><span></span></div>"+it+
-  (R0?"":"<button class='btn g s' style='margin:8px 0 14px' onclick='Q.addRow()'>＋ Add a service</button>")+
+  (R0?"<p class=note style='margin:8px 0 14px'>"+(EDIT.by!=me?"Only "+esc(nm(EDIT.by))+" can change this quotation. Use “Ask for changes” if a service is missing.":"This quotation is locked because it is "+esc((SL[s]||["approved"])[0]).toLowerCase()+". Make a new quotation to add services.")+"</p>"
+  :"<div class=qadd><button class='btn g s' onclick='Q.addRow()'>＋ Add a service</button>"+QSV.filter(function(n){return!q.items.some(function(x){return x.s.trim().toLowerCase()==n.toLowerCase()})}).map(function(n){return"<button type=button class=qchip onclick=\"Q.addSvc('"+n.replace(/'/g,"")+"')\">＋ "+esc(n)+"</button>"}).join("")+"</div>")+
   "<p class=note style='margin-bottom:10px'>Leave a rate empty to show “Included”. Use “Package price” when one price covers everything.</p>"+
   "<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:0 14px'>"+fld("q_pk","Package price (optional)",q.pkg,"e.g. 20000","number")+"<div><label for=q_ds>Discount</label><select id=q_ds onchange='Q.pull()'"+dis+">"+[0,5,10,15,20,25,30].map(function(x){return"<option value="+x+(Number(q.disc||0)==x?" selected":"")+">"+(x?x+"%":"None")+"</option>"}).join("")+"</select></div>"+
   "<div><label for=q_gs>GST</label><select id=q_gs onchange='Q.pull()'"+dis+">"+[["0","Nil"],["5","5%"],["12","12%"],["18","18%"]].map(function(x){return"<option value="+x[0]+(String(q.gst)==x[0]?" selected":"")+">"+x[1]+"</option>"}).join("")+"</select></div>"+fld("q_ad","Advance %",q.adv,"50","number")+"</div>"+
@@ -1692,7 +1694,7 @@ function form(){var q=EDIT,R0=ro(),s=state(q),ok=oks()[keyOf(q)],dis=R0?" disabl
 function acts(q,s){var b=[],a=qa(keyOf(q));
  if(!ro()){if(FOUND)b.push("<button class=btn onclick='Q.save(\"approve\")'>Save &amp; approve</button>");else b.push("<button class=btn onclick='Q.save(\"submit\")'>"+(s=="pending"?"Save &amp; resend for approval":"Send for approval")+"</button>");b.push("<button class='btn g' onclick='Q.save()'>Save draft</button>")}
  if(FOUND&&s=="pending"&&q.by!=me)b.push("<button class=btn onclick=\"Q.approve("+a+")\">Approve</button>","<button class='btn g' onclick=\"Q.changes("+a+")\">Ask for changes</button>");
- b.push("<button class='btn g' onclick='Q.pdfEdit()'>"+(["approved","sent","accepted","declined"].indexOf(s)>=0?"Download PDF":"Preview PDF")+"</button>");
+ b.push(["approved","sent","accepted","declined"].indexOf(s)>=0?"<button class=btn onclick='Q.pdfEdit()'>↓ Download PDF</button><button class='btn g' onclick='Q.preview()'>Print view</button>":"<button class='btn g' onclick='Q.preview()'>Preview PDF</button>");
  if(q.by==me&&s=="approved")b.push("<button class='btn g' onclick=\"Q.mark("+a+",'sent')\">Mark as sent</button>");
  if(q.by==me&&s=="sent")b.push("<button class='btn g' onclick=\"Q.mark("+a+",'accepted')\">Client accepted</button>","<button class='btn g' onclick=\"Q.mark("+a+",'declined')\">Client declined</button>");
  if(q.by==me&&mine()[q.id])b.push("<button class='btn g' onclick='Q.dup()'>Duplicate</button>");
@@ -1704,7 +1706,9 @@ function pull(){if(!EDIT||ro())return totals();var q=EDIT;q.client={name:v("q_cn
  q.scope=v("q_sc");q.notes=v("q_nt");document.querySelectorAll("#qt_ed .qi").forEach(function(e){var x=q.items[+e.dataset.i];if(x)x[e.dataset.f]=e.dataset.f=="q"?e.value:e.dataset.f=="r"?(e.value===""?"":Number(e.value)):e.value});totals()}
 function totals(){var q=EDIT,S=sums(q);q.items.forEach(function(x,i){var c=$("qa_"+i);if(c)c.textContent=x.r===""||x.r==null?"Included":money(Number(x.q||0)*Number(x.r||0))});
  $("q_tot").innerHTML="<div class=kv><span class=mono>Subtotal</span><b>"+money(S.sub)+"</b></div><div class=kv><span class=mono>Discount</span><b>"+(S.disc?money(S.disc)+" ("+q.disc+"%)":"—")+"</b></div><div class=kv><span class=mono>GST</span><b>"+(Number(q.gst)?money(S.tax)+" ("+q.gst+"%)":"Nil")+"</b></div><div class=kv><span class=mono>Total</span><b style='font-size:18px'>₹"+money(S.tot)+"</b></div><p class=sm style='text-align:right'>"+esc(inWords(S.tot))+"</p>"}
-function addRow(){pull();EDIT.items.push({s:"",d:"",q:1,r:""});form()}
+function addRow(){pull();EDIT.items.push({s:"",d:"",q:1,r:""});form();var r=document.querySelectorAll(".qrow:not(.qh) input[data-f=s]");if(r.length)r[r.length-1].focus()}
+var QSV=["Social media management","Reels & short videos","Influencer marketing","Meta & Google ads","Brand film","Photo shoot","Branding & logo","Website","Event marketing","SEO"];
+function addSvc(n){pull();var e=EDIT.items.filter(function(x){return!x.s.trim()&&!x.d.trim()})[0];if(e)e.s=n;else EDIT.items.push({s:n,d:"",q:1,r:""});form()}
 function delRow(i){pull();EDIT.items.splice(i,1);form()}
 function check(q){if(!q.client.name)return"Add the client’s name.";if(!q.items.some(function(x){return x.s.trim()}))return"Add at least one service.";if(q.client.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q.client.email))return"Check the email address.";
  if(q.client.phone&&q.client.phone.replace(/\D/g,"").length<10)return"Check the phone number (at least 10 digits).";return""}
@@ -1730,9 +1734,11 @@ function fromLead(){var i=$("q_lead").value;if(i===""||!LEADL)return;var l=LEADL
  if(!EDIT.items.some(function(x){return x.s.trim()})&&(l.service_interests||[]).length)EDIT.items=(l.service_interests||[]).map(function(x){return{s:x,d:"",q:1,r:""}});form()}
 
 /* ---------- the PDF: the five-page RPS quotation, printed from the browser ---------- */
-function pdf(key){var q=find(key);if(q)print(q)}
-function pdfEdit(){pull();print(EDIT)}
-function print(q){fixQ(q);var s=state(q),ok=["approved","sent","accepted","declined"].indexOf(s)>=0,S=sums(q),e=esc,d=function(x){return x?new Date(x+"T00:00").toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}):""};
+function isOk(q){return["approved","sent","accepted","declined"].indexOf(state(q))>=0}
+function pdf(key){var q=find(key);if(q)print(q,isOk(q))}
+function pdfEdit(){pull();print(EDIT,isOk(EDIT))}
+function preview(key){var q=key?find(key):(pull(),EDIT);if(q)print(q,false)}
+function print(q,dl){fixQ(q);var s=state(q),ok=["approved","sent","accepted","declined"].indexOf(s)>=0,S=sums(q),e=esc,d=function(x){return x?new Date(x+"T00:00").toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}):""};
  var logo="<div class=lg><b>rock</b><span>papers</span><b>scissors</b></div>",foot=function(n){return"<div class=ft><span>rockpapersscissors.in</span><span>0"+n+" / 05</span></div>"},
   head=function(t){return"<div class=hd>"+logo+"<span class=mono>"+t+"</span></div>"},adv=Number(q.adv||50);
  var rows=q.items.filter(function(x){return x.s||x.d}).map(function(x,i){var inc=x.r===""||x.r==null;return"<tr><td class=mono>"+String(i+1).padStart(2,"0")+"</td><td><b>"+e(x.s)+"</b>"+(x.d?"<br><span class=dd>"+e(x.d)+"</span>":"")+"</td><td class=c>"+e(x.q)+"</td><td class=r>"+(inc?"Included":money(x.r))+"</td><td class=r>"+(inc?"Included":money(Number(x.q||0)*Number(x.r||0)))+"</td></tr>"}).join("");
@@ -1792,9 +1798,28 @@ function print(q){fixQ(q);var s=state(q),ok=["approved","sent","accepted","decli
   ["09 General",["This quotation is valid until the date shown on it.","Both sides keep each other’s confidential information private.","Any dispute is subject to the courts of Bengaluru, Karnataka."]]].map(function(t){return"<h4>"+t[0]+"</h4><ul>"+t[1].map(function(x){return"<li>"+x+"</li>"}).join("")+"</ul>"}).join("")+"</div>"+
  "<div class=grid style='grid-template-columns:1fr 1fr;margin-top:auto;gap:12mm'><div><span class=mono>Accepted by the client</span><div class=f style='margin-top:14mm'><span class=mono>Signature</span></div><div class=grid style='grid-template-columns:1fr 1fr;margin-top:8mm'><div class=f><span class=mono>Name</span></div><div class=f><span class=mono>Date</span></div></div></div>"+
  "<div><span class=mono>For Rock Papers Scissors</span><div class=f style='margin-top:14mm'><span class=mono>Authorised signatory</span></div><p style='margin-top:8mm;font-size:9.5px'>Questions, or something you want changed? Write to info@rockpapersscissors.in or call +91 63620 12456.</p><p style='text-align:right;font:800 15px Geist;margin-top:4mm'>raw <span style='font-weight:300'>to</span> reality<span style='color:#E10600'>.</span></p></div></div>"+foot(5)+"</section></body></html>";
+ if(dl&&ok)return dlPdf(html,q);
  var w=window.open("","_blank");if(!w){toast("Pop-up blocked","Allow pop-ups for the portal to open the PDF.",null,"c-amber");return}w.document.open();w.document.write(html);w.document.close()}
+/* direct download: the same five pages, drawn into a real PDF file */
+var DLB=false;
+async function dlPdf(html,q){if(DLB)return;DLB=true;toast("Making the PDF",(q.no||"Quotation")+" will download in a few seconds.",null,"c-ion");
+ var f=document.createElement("iframe");f.setAttribute("aria-hidden","true");f.style.cssText="position:fixed;left:-12000px;top:0;width:900px;height:1300px;border:0";
+ try{document.body.appendChild(f);
+  f.srcdoc=html.replace("</head>","<script src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'><\/script><script src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'><\/script></head>");
+  await new Promise(function(r){f.onload=r});var W=f.contentWindow,d=f.contentDocument;
+  for(var t=0;t<100&&!(W.html2canvas&&W.jspdf);t++)await new Promise(function(r){setTimeout(r,100)});
+  if(!(W.html2canvas&&W.jspdf))throw new Error("The PDF maker didn’t load. Check your connection.");
+  try{await d.fonts.ready}catch(e){}await new Promise(function(r){setTimeout(r,250)});
+  d.querySelectorAll(".bar,.dr").forEach(function(e){e.remove()});d.body.style.background="#F0EFEB";
+  var P=new W.jspdf.jsPDF({unit:"mm",format:"a4",compress:true}),pg=d.querySelectorAll(".pg");
+  for(var i=0;i<pg.length;i++){pg[i].style.margin="0";var c=await W.html2canvas(pg[i],{scale:2,backgroundColor:"#F0EFEB",useCORS:true,logging:false});
+   if(i)P.addPage();P.addImage(c.toDataURL("image/jpeg",.92),"JPEG",0,0,210,297)}
+  var nmF=((q.no||"Quotation")+" "+((q.client&&q.client.name)||"")).trim().replace(/[\\/:*?"<>|]+/g,"").replace(/\s+/g," ")+".pdf";
+  var bl=P.output("blob"),u=URL.createObjectURL(new Blob([bl],{type:"application/pdf"})),ln=document.createElement("a");ln.href=u;ln.download=nmF;document.body.appendChild(ln);ln.click();ln.remove();setTimeout(function(){URL.revokeObjectURL(u)},60000);toast("PDF downloaded",nmF,null,"c-mint")}
+ catch(e){toast("PDF not made",(e&&e.message)||"Try again.",null,"c-fire")}
+ finally{f.remove();DLB=false}}
 
-return{live:function(){if(!EDIT)draw()},draw:draw,newQ:newQ,open:open,pull:pull,addRow:addRow,delRow:delRow,save:saveQ,approve:approve,changes:changes,mark:mark,dup:dup,del:del,back:back,pdf:pdf,pdfEdit:pdfEdit,fromLead:fromLead,can:canQuote,
+return{live:function(){if(!EDIT)draw()},draw:draw,newQ:newQ,open:open,pull:pull,addRow:addRow,addSvc:addSvc,preview:preview,delRow:delRow,save:saveQ,approve:approve,changes:changes,mark:mark,dup:dup,del:del,back:back,pdf:pdf,pdfEdit:pdfEdit,fromLead:fromLead,can:canQuote,
  seg:function(f){QF=f;EDIT=null;$("qt_ed").innerHTML="";draw()},_t:{inWords:inWords,sums:sums,fp:fp}}})();
 R.squote=function(){var s=$("qt_seg");if(s&&!s.dataset.on){s.dataset.on=1;s.querySelectorAll("button").forEach(function(b){b.onclick=function(){s.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x==b)});Q.seg(b.dataset.f)}})}Q.draw()};
 
