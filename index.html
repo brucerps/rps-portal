@@ -142,6 +142,8 @@ th{font:500 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;col
 tbody tr{transition:background .2s}tbody tr:hover{background:rgba(255,255,255,.025)}
 td.n,th.n{text-align:right;font-family:var(--mono)}
 .emp{color:var(--dust);text-align:center;padding:22px}
+.qrow{display:grid;grid-template-columns:34px minmax(0,1fr) 72px 130px 120px 40px;gap:10px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}.qrow input{margin:0}.qsv{display:flex;flex-direction:column;gap:6px}.qsv .qd{font-size:13px;padding:9px 14px}.qno{font-family:var(--mono);padding-top:13px;color:var(--dust)}.qam{text-align:right;padding-top:13px;font:500 13px var(--mono)}.qh{font:500 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dust);padding-bottom:6px}
+@media(max-width:720px){.qrow{grid-template-columns:28px minmax(0,1fr) 64px;}.qrow .qsv{grid-column:2/4}.qrow>input{grid-column:auto}.qh{display:none}.qam{grid-column:2/3;text-align:left;padding-top:0}}
 .tag{display:inline-flex;align-items:center;gap:6px;font:500 11px var(--mono);letter-spacing:.06em;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--c,var(--c-ion)) 16%,transparent);color:var(--c,var(--c-ion))}
 .sw{display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--c);margin-right:8px}
 .list p{margin:0;padding:10px 0;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;font-size:14px}.list p:last-child{border:0}
@@ -410,6 +412,21 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--ion);outline-offset
   <div class="card adm" id="lc_off"></div>
  </section>
 
+ <!-- SALES + FOUNDER: quotations (draft, approve, branded PDF) -->
+ <section class="sec" id="squote">
+  <div class="grid" id="qt_k"></div>
+  <div class="card"><div class="ttl-r"><div><span class="mono">_ Quotations</span><h3>Quote it, approve it, send it.</h3></div><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><div class="seg" id="qt_seg"><button data-f="all" class="on">All</button><button data-f="pending">Waiting</button><button data-f="approved">Approved</button><button data-f="sent">Sent</button></div><button class="btn s" onclick="Q.newQ()">＋ New quotation</button></div></div>
+   <div id="qt_ed"></div><div id="qt_list"></div></div>
+ </section>
+
+ <!-- HR + FOUNDER: portal sign-in / sign-out and punches, one line per person per day -->
+ <section class="sec" id="hlog">
+  <div class="grid" id="lg_k"></div>
+  <div class="card"><div class="ttl-r"><div><span class="mono">_ Daily sheet</span><h3>Who logged in, and when.</h3></div><div style="display:flex;gap:10px;flex-wrap:wrap"><input type="date" id="lg_d" style="margin:0;width:auto" onchange="R.hlog()"><select id="lg_e" style="margin:0;width:auto;min-width:180px" onchange="R.hlog()"></select></div></div>
+   <p class="note" style="margin-bottom:12px">Portal sign-in is when they opened the portal; sign-out is when they logged out (or, if they just closed it, the last time it was open). Punch in and out are their shift. Late means a first punch after 10:15 AM; a short day is under 8 hours punched.</p>
+   <div class="tw"><table><thead><tr><th>Name</th><th>Portal sign-in</th><th>Portal sign-out</th><th class="n">Time in portal</th><th>Punch in</th><th>Punch out</th><th class="n">Hours worked</th><th>Flags</th></tr></thead><tbody id="lg_tb"></tbody></table></div></div>
+ </section>
+
  <!-- HR: payroll -->
  <section class="sec" id="hpay"><div class="card adm" id="hpw"></div></section>
 
@@ -540,6 +557,7 @@ function nav(){if(!SESS)return[];var L=[];
  if(FOUND||own(["verifier"]))L.push(["sver","Verification desk"]);
  if(FOUND||any(["lead_generation","verifier","telecaller","sales","department_head","research","strategy","proposal"]))L.push(["sleads","Leads"]);
  if(own(["telecaller","sales","department_head"]))L.push(["sfup","Follow-ups"]);
+ if(window.Q&&Q.can())L.push(["squote","Quotations"]);
  if(HRM)L.push(["haccess","Access"]);
  /* the founder and department heads reach verification and leads from tabs inside the Sales pipeline */
  if(L.some(function(x){return x[0]=="spipe"}))L=L.filter(function(x){return x[0]!="sver"&&x[0]!="sleads"});return L}
@@ -978,7 +996,7 @@ async function resume(){var r=await SB.rpc("portal_session");
  if(r.error||!r.data){await SB.auth.signOut();amsg(r.error?friendly(r.error):"Your account isn’t active on the portal. Ask HR to set it up.");return false}
  SESS=r.data;amsg("Loading your portal…",null);
  try{await connect()}catch(e){amsg("Signed in, but the portal data didn’t load: "+friendly(e));sync("err");return false}
- users();me=SESS.code;FOUND=!!SESS.is_admin;HRM=FOUND||!!SESS.is_hr;HRV=HRM;D=ld("ems_d_"+me,{})||{};migrate();amsg("");
+ users();me=SESS.code;FOUND=!!SESS.is_admin;HRM=FOUND||!!SESS.is_hr;HRV=HRM;D=ld("ems_d_"+me,{})||{};migrate();logStart();amsg("");
  enter(FOUND?"fover":"dash");return true}
 /* invite and password-reset emails land here with the link type in the address */
 function setPw(title){ask({k:"_ Your password",t:title,ok:"Save password",noCancel:true,
@@ -1048,7 +1066,19 @@ function migrate(){D.att=D.att||{};D.plan=D.plan||{};D.ses=D.ses||{};D.leaves=D.
  if(D.cur&&!openS())D.cur=null;closeStale();
  if(!D.cur)Object.keys(D.att).forEach(function(d){var s=D.att[d].s,l=s[s.length-1];if(l&&!l.o)D.cur=d});save()}
 function save(){if(me)sv("ems_d_"+me,D)}
-function bye(){unplug();MAYAM=[];if($("mayaFab")){$("mayaFab").hidden=true;$("mayaBox").hidden=true}navReset();tClose();$("npanel").hidden=true;$("toasts").innerHTML="";me=null;HRM=false;FOUND=false;PONE=null;$("app").style.display="none";$("auth").style.display="flex";$("amsg").textContent="";$("ef").hidden=true}
+/* portal sign-in / sign-out times, kept on each person's own record: D.log[day] = [{in,last,out?,dev}] */
+var LOGT=null,LOGGAP=15*6e4;
+function devName(){var u=navigator.userAgent||"";return /iphone|ipad/i.test(u)?"iPhone":/android/i.test(u)?"Android":/macintosh|mac os/i.test(u)?"Mac":/windows/i.test(u)?"Windows":"Browser"}
+function logNow(kind){if(!me||!D)return;var n=new Date(),at=n.toISOString(),day=k(n);D.log=D.log||{};var L=D.log[day]=D.log[day]||[],l=L[L.length-1];
+ if(kind=="out"){if(l&&!l.out){l.last=at;l.out=at}}
+ else if(l&&!l.out&&n-new Date(l.last)<LOGGAP)l.last=at;
+ else L.push({in:at,last:at,dev:devName()});
+ var ks=Object.keys(D.log).sort();while(ks.length>150)delete D.log[ks.shift()];save()}
+function logStart(){clearInterval(LOGT);logNow("in");LOGT=setInterval(function(){if(me&&document.visibilityState=="visible")logNow("beat")},2*6e4)}
+function logStop(){clearInterval(LOGT);LOGT=null;if(me)logNow("out")}
+document.addEventListener("visibilitychange",function(){if(!me)return;logNow("beat");if(document.visibilityState=="hidden")flushAll().catch(function(){})});
+window.addEventListener("pagehide",function(){if(me){logNow("beat");flushAll().catch(function(){})}});
+function bye(){logStop();unplug();MAYAM=[];if($("mayaFab")){$("mayaFab").hidden=true;$("mayaBox").hidden=true}navReset();tClose();$("npanel").hidden=true;$("toasts").innerHTML="";me=null;HRM=false;FOUND=false;PONE=null;$("app").style.display="none";$("auth").style.display="flex";$("amsg").textContent="";$("ef").hidden=true}
 
 /* logout: an employee must file a work report of at least 50 words */
 var MINW=100;
@@ -1073,7 +1103,7 @@ function remote(){if(!me&&!HRM)return;users();setTimeout(function(){nCheck();tpR
  if(me&&!U[me]){bye();$("amsg").textContent="Your account was closed by HR.";return}
  if(me){var nd=MEM["ems_d_"+me];if(nd&&nd!==D){D=nd;D.att=D.att||{};D.leaves=D.leaves||[];D.ins=D.ins||{};D.rep=D.rep||{};D.plan=D.plan||{};D.ses=D.ses||{}}}
  hdr();if(me)pbtn();var on=document.querySelector(".sec.on");if(!on)return;
- if(on.id=="dash")R.dash();else if(on.id=="task")R.task(true);else if(on.id=="pay")R.pay();else if(on.id=="hemp")R.hemp(true);else if(on.id=="hrep")R.hrep();else if(on.id=="fover")R.fover();else if(on.id=="fperf")R.fperf();else if(on.id=="ftask")R.ftask();else if(on.id=="hloc")R.hloc()}
+ if(on.id=="dash")R.dash();else if(on.id=="task")R.task(true);else if(on.id=="pay")R.pay();else if(on.id=="hemp")R.hemp(true);else if(on.id=="hrep")R.hrep();else if(on.id=="fover")R.fover();else if(on.id=="fperf")R.fperf();else if(on.id=="ftask")R.ftask();else if(on.id=="hloc")R.hloc();else if(on.id=="hlog")R.hlog();else if(on.id=="squote")Q.live()}
 function hdr(){if(FOUND){var f=U[me]||{};$("h_av").textContent=ini(f.name);$("h_n").textContent=f.name||me;$("h_r").textContent="Founder · "+me;$("shc").hidden=true;return}
  if(HRM){var hu=me&&U[me];$("h_av").textContent=hu?ini(hu.name):"HR";$("h_n").textContent=hu?hu.name:"HR desk";$("h_r").textContent=hu?"HR · "+me:"Rock Papers Scissors";$("shc").hidden=!me;return}
  var u=U[me]||{};$("shc").hidden=false;$("h_av").textContent=ini(u.name);$("h_n").textContent=u.name||me;$("h_r").textContent=u.role||me}
@@ -1086,7 +1116,7 @@ function nav(){if($("mayaFab")){$("mayaFab").hidden=!FOUND;$("mayaBox").hidden=t
  document.querySelectorAll("#nav a[data-s]").forEach(function(a){a.onclick=function(e){e.preventDefault();show(a.dataset.s)}});
  $("lo").onclick=function(e){e.preventDefault();logout()}}
 /* pages that live as tabs inside one menu item: attendance inside Employees, verification / leads / team follow-ups inside Sales pipeline */
-function grpTabs(g){return g=="hemp"?(HRM?[["hemp","Team"],["hloc","Attendance & locations"]]:[]):g=="spipe"&&window.S&&S.tabs?S.tabs():[]}
+function grpTabs(g){return g=="hemp"?(HRM?[["hemp","Team"],["hloc","Attendance & locations"],["hlog","Login & logout"]]:[]):g=="spipe"&&window.S&&S.tabs?S.tabs():[]}
 function grpOf(s){var g=["hemp","spipe"];for(var i=0;i<g.length;i++)if(document.querySelector("#nav a[data-s="+g[i]+"]")&&grpTabs(g[i]).some(function(t){return t[0]==s}))return g[i];return null}
 function subtabs(par,s){document.querySelectorAll(".subtabs").forEach(function(x){x.remove()});var T=par?grpTabs(par):[];if(T.length<2)return;
  var d=document.createElement("div");d.className="seg subtabs";d.innerHTML=T.map(function(t){return"<button data-s='"+t[0]+"'"+(t[0]==s?" class=on":"")+">"+t[1]+"</button>"}).join("");
@@ -1548,6 +1578,210 @@ function locCell(g){if(!g)return"<span class=sm>–</span>";var X=g.x?ld("ems_x_
  if(g.ok)return"<span class='tag c-mint'>Office</span>";
  return"<span class='tag c-amber'>"+(g.err?"No location":"Outside · "+kmTxt(g.d))+"</span>"+(st?" <span class='tag "+st[1]+"'>"+st[0]+"</span>":"")+(g.la!=null?" <a class=sm href='"+mapUrl(g.la,g.ln)+"' target=_blank rel=noopener>map</a>":"")}
 var LF="pending";
+/* ---------- QUOTATIONS: sales drafts a quote, the founder approves it, then it downloads as the branded RPS PDF ----------
+   Each quote lives on its author's own record (D.quotes). Approvals live in the HR store (ems_cfg_qok), which only the
+   founder and HR can write, and each approval is tied to a fingerprint of the quote: change the quote and it needs approval again. */
+var Q=(function(){
+var EDIT=null,QF="all",LEADL=null;
+function mine(){D.quotes=D.quotes||{};return D.quotes}
+function oks(){return ld("ems_cfg_qok",{})||{}}
+function keyOf(q){return q.by+"/"+q.id}
+function fp(q){var c=JSON.stringify([q.no,q.client,q.date,q.valid,q.items,q.pkg,q.disc,q.gst,q.scope,q.notes,q.adv]),h=5381;for(var i=0;i<c.length;i++)h=((h<<5)+h+c.charCodeAt(i))|0;return(h>>>0).toString(36)}
+function state(q){var a=oks()[keyOf(q)],h=fp(q);
+ if(a&&a.h==h&&a.st=="ok")return q.res?q.res:q.sent?"sent":"approved";
+ if(a&&a.h==h&&a.st=="changes")return"changes";
+ return q.sub==h?"pending":"draft"}
+var SL={draft:["Draft","c-ion"],pending:["Waiting for approval","c-amber"],changes:["Changes asked","c-fire"],approved:["Approved","c-mint"],sent:["Sent to client","c-cyan"],accepted:["Accepted","c-mint"],declined:["Declined","c-fire"]};
+function tagQ(q){var s=SL[state(q)];return"<span class='tag "+s[1]+"'>"+s[0]+"</span>"}
+function money(n){return Number(n||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function sums(q){var sub=q.items.reduce(function(a,x){return a+(x.r===""||x.r==null?0:Number(x.q||0)*Number(x.r||0))},0);
+ if(q.pkg!==""&&q.pkg!=null&&!isNaN(Number(q.pkg)))sub=Number(q.pkg);var disc=Math.min(Number(q.disc||0),sub),tax=Math.round((sub-disc)*Number(q.gst||0))/100;return{sub:sub,disc:disc,tax:tax,tot:sub-disc+tax}}
+var ONE=["","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"],TEN=["","","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"];
+function w2(n){return n<20?ONE[n]:TEN[Math.floor(n/10)]+(n%10?"-"+ONE[n%10]:"")}
+function w3(n){return(n>=100?ONE[Math.floor(n/100)]+" hundred"+(n%100?" and ":""):"")+(n%100?w2(n%100):"")}
+function inWords(x){var n=Math.floor(x),p=Math.round((x-n)*100),out=[],cr=Math.floor(n/1e7),lk=Math.floor(n/1e5)%100,th=Math.floor(n/1e3)%100,rest=n%1000;
+ if(!n&&!p)return"Rupees zero only";if(cr)out.push((cr>=100?w3(cr):w2(cr))+" crore");if(lk)out.push(w2(lk)+" lakh");if(th)out.push(w2(th)+" thousand");if(rest)out.push(w3(rest));
+ var s="Rupees "+out.join(" ")+(p?" and "+w2(p)+" paise":"")+" only";return s.charAt(0).toUpperCase()+s.slice(1)}
+function addDays(d,n){var x=new Date(d+"T00:00");x.setDate(x.getDate()+n);return k(x)}
+function nextNo(){var y=new Date().getFullYear(),code=String(me).replace(/^RPS/i,""),n=0;Object.keys(mine()).forEach(function(i){var m=(mine()[i].no||"").match(/-(\d+)$/);if(m&&(mine()[i].no||"").indexOf("RPS-"+y+"-"+code)==0)n=Math.max(n,+m[1])});return"RPS-"+y+"-"+code+"-"+String(n+1).padStart(2,"0")}
+function blank(){var t=k(new Date());return{id:rid(),no:nextNo(),by:me,at:new Date().toISOString(),lead:null,client:{name:"",attn:"",addr:"",contact:""},date:t,valid:addDays(t,15),
+ items:[{s:"",d:"",q:1,r:""}],pkg:"",disc:"",gst:18,scope:"",notes:"",adv:50,sent:null,res:null,sub:null}}
+function canQuote(){return FOUND||(SESS&&(SESS.roles||[]).some(function(r){return["sales","telecaller","department_head","proposal","account_manager","strategy"].indexOf(r)>=0}))}
+function allQ(){var L=[];var ids=HRM?Object.keys(U):[me];ids.forEach(function(id){var d=id==me?D:ld("ems_d_"+id,{})||{};Object.keys(d.quotes||{}).forEach(function(i){L.push(d.quotes[i])})});
+ return L.sort(function(a,b){return(b.up||b.at)<(a.up||a.at)?-1:1})}
+function nm(id){return(U[id]&&U[id].name)||id}
+
+/* ---------- list ---------- */
+function draw(){if(EDIT){form();return}var L=allQ(),cnt={pending:0,approved:0,sent:0,accepted:0},val=0;
+ L.forEach(function(q){var s=state(q);if(cnt[s]!=null)cnt[s]++;if(s=="accepted")val+=sums(q).tot});
+ $("qt_k").innerHTML=kt(cnt.pending?"c-amber":"c-mint","⧗",cnt.pending,FOUND?"Waiting for your approval":"Waiting for approval")+kt("c-mint","✓",cnt.approved,"Approved, not sent yet")+kt("c-cyan","↗",cnt.sent,"Sent to clients")+kt("c-violet","₹",val?inr(Math.round(val)):"–","Accepted value");
+ var F=L.filter(function(q){var s=state(q);return QF=="all"||(QF=="pending"?s=="pending"||s=="changes":QF=="approved"?s=="approved":s=="sent"||s=="accepted"||s=="declined")});
+ $("qt_list").innerHTML=F.length?"<div class=tw><table><thead><tr><th>Quote</th><th>Client</th><th class=n>Total</th><th>Status</th>"+(HRM?"<th>By</th>":"")+"<th></th></tr></thead><tbody>"+F.map(function(q){var s=state(q),a=qa(keyOf(q)),t=sums(q).tot,ok=oks()[keyOf(q)];
+  var b=["<button class='btn g s' onclick=\"Q.open("+a+")\">"+(q.by==me&&["draft","changes","pending"].indexOf(s)>=0?"Edit":"Open")+"</button>","<button class='btn g s' onclick=\"Q.pdf("+a+")\">"+(["approved","sent","accepted","declined"].indexOf(s)>=0?"PDF":"Preview")+"</button>"];
+  if(FOUND&&s=="pending")b.unshift("<button class='btn s' onclick=\"Q.approve("+a+")\">Approve</button>","<button class='btn g s' onclick=\"Q.changes("+a+")\">Ask for changes</button>");
+  return"<tr><td style='font-family:var(--mono)'>"+esc(q.no)+"<br><span class=sm>"+esc(dshort(q.date))+"</span></td><td><b>"+esc(q.client.name||"(no client yet)")+"</b>"+(q.client.attn?"<br><span class=sm>"+esc(q.client.attn)+"</span>":"")+"</td><td class=n>"+inr(Math.round(t))+"</td><td>"+tagQ(q)+(s=="changes"&&ok&&ok.note?"<br><span class=sm>"+esc(ok.note)+"</span>":"")+"</td>"+(HRM?"<td>"+esc(nm(q.by))+"</td>":"")+"<td><div style='display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end'>"+b.join("")+"</div></td></tr>"}).join("")+"</tbody></table></div>"
+  :"<p class=note style='padding:14px 0'>"+(L.length?"Nothing in this view.":"No quotations yet. Press “New quotation” to make the first one.")+"</p>"}
+function find(key){var i=key.indexOf("/"),by=key.slice(0,i),id=key.slice(i+1),d=by==me?D:ld("ems_d_"+by,{})||{};return(d.quotes||{})[id]||null}
+
+/* ---------- editor ---------- */
+function newQ(){EDIT=blank();form()}
+function open(key){var q=find(key);if(!q)return;EDIT=JSON.parse(JSON.stringify(q));form()}
+function ro(){var s=state(EDIT);return EDIT.by!=me||["approved","sent","accepted","declined"].indexOf(s)>=0}
+function fld(id,lab,v,ph,type){return"<div><label for="+id+">"+lab+"</label><input id="+id+(type?" type="+type:"")+" value=\""+esc(v==null?"":v)+"\""+(ph?" placeholder=\""+esc(ph)+"\"":"")+(ro()?" disabled":"")+" oninput='Q.pull()'></div>"}
+function form(){var q=EDIT,R0=ro(),s=state(q),ok=oks()[keyOf(q)],dis=R0?" disabled":"";
+ $("qt_list").innerHTML="";$("qt_k").innerHTML="";
+ var it=q.items.map(function(x,i){return"<div class=qrow><span class=qno>"+String(i+1).padStart(2,"0")+"</span><div class=qsv><input class=qi data-i="+i+" data-f=s value=\""+esc(x.s)+"\" placeholder='Service, e.g. Brand film' aria-label='Service'"+dis+" oninput='Q.pull()'><input class='qi qd' data-i="+i+" data-f=d value=\""+esc(x.d)+"\" placeholder='Detail, e.g. Portrait and landscape' aria-label='Detail'"+dis+" oninput='Q.pull()'></div>"+
+  "<input class=qi data-i="+i+" data-f=q value=\""+esc(x.q)+"\" aria-label='Quantity'"+dis+" oninput='Q.pull()'><input class=qi data-i="+i+" data-f=r type=number min=0 value=\""+esc(x.r)+"\" placeholder='Included' aria-label='Rate'"+dis+" oninput='Q.pull()'>"+
+  "<b class=qam id=qa_"+i+"></b><span>"+(R0||q.items.length<2?"":"<button class='btn g s' onclick='Q.delRow("+i+")' aria-label='Remove row'>✕</button>")+"</span></div>"}).join("");
+ $("qt_ed").innerHTML="<div class=ttl-r><div><span class=mono>_ "+esc(q.no)+"</span><h3>"+esc(q.client.name||"New quotation")+".</h3></div><div>"+tagQ(q)+"</div></div>"+
+  (s=="changes"&&ok?"<div class=done style='border-color:rgba(255,59,48,.45);background:rgba(255,59,48,.07);margin-bottom:14px'><b>Changes asked by "+esc(nm(ok.by))+"</b><p class=note style='margin-top:6px'>"+esc(ok.note||"")+"</p></div>":"")+
+  (s=="pending"&&!FOUND?"<p class=note style='margin-bottom:12px'>Sent to the founder for approval. You can still edit it; any change sends the new version for approval.</p>":"")+
+  (R0&&q.by==me&&s!="draft"?"<p class=note style='margin-bottom:12px'>Approved quotes are locked. To change one, press “Duplicate” and send the copy for approval.</p>":"")+
+  (!R0?"<div><label for=q_lead>Fill from a lead (optional)</label><select id=q_lead onchange='Q.fromLead()'><option value=''>"+(q.lead?esc(q.lead.code)+" · linked":"Pick a lead from the CRM…")+"</option></select></div>":"")+
+  "<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0 14px'>"+fld("q_cn","Client (company)",q.client.name,"e.g. Vinayaka Arcade")+fld("q_ca","Attention (person)",q.client.attn,"e.g. Manjula Devi")+fld("q_cc","Email or phone",q.client.contact,"")+fld("q_cd","Address",q.client.addr,"City / area")+
+  fld("q_no","Quote no.",q.no)+fld("q_dt","Date",q.date,"","date")+fld("q_vu","Valid until",q.valid,"","date")+"</div>"+
+  "<div class=mini>Services</div><div class='qrow qh'><span>No.</span><span>Service</span><span>Qty</span><span>Rate (₹)</span><span style='text-align:right'>Amount (₹)</span><span></span></div>"+it+
+  (R0?"":"<button class='btn g s' style='margin:8px 0 14px' onclick='Q.addRow()'>＋ Add a service</button>")+
+  "<p class=note style='margin-bottom:10px'>Leave a rate empty to show “Included”. Use “Package price” when one price covers everything.</p>"+
+  "<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:0 14px'>"+fld("q_pk","Package price (optional)",q.pkg,"e.g. 20000","number")+fld("q_ds","Discount (₹)",q.disc,"0","number")+
+  "<div><label for=q_gs>GST</label><select id=q_gs onchange='Q.pull()'"+dis+">"+[["0","Nil"],["5","5%"],["12","12%"],["18","18%"]].map(function(x){return"<option value="+x[0]+(String(q.gst)==x[0]?" selected":"")+">"+x[1]+"</option>"}).join("")+"</select></div>"+fld("q_ad","Advance %",q.adv,"50","number")+"</div>"+
+  "<label for=q_sc>Scope and deliverables</label><textarea id=q_sc rows=4 oninput='Q.pull()'"+dis+" placeholder='What exactly is included: number of reels, revisions, timelines, what the client provides…'>"+esc(q.scope)+"</textarea>"+
+  "<label for=q_nt>Notes</label><textarea id=q_nt rows=3 oninput='Q.pull()'"+dis+" placeholder='e.g. Package price includes influencer fees. Payment: 50% advance, 50% on delivery. Bank details.'>"+esc(q.notes)+"</textarea>"+
+  "<div class=kvs id=q_tot style='max-width:420px;margin-left:auto'></div>"+
+  "<div style='display:flex;gap:8px;flex-wrap:wrap;margin-top:14px'>"+acts(q,s)+"</div><p class=msg id=q_msg></p>";
+ totals();if(!R0)leadsFill()}
+function acts(q,s){var b=[],a=qa(keyOf(q));
+ if(!ro()){if(FOUND)b.push("<button class=btn onclick='Q.save(\"approve\")'>Save &amp; approve</button>");else b.push("<button class=btn onclick='Q.save(\"submit\")'>"+(s=="pending"?"Save &amp; resend for approval":"Send for approval")+"</button>");b.push("<button class='btn g' onclick='Q.save()'>Save draft</button>")}
+ if(FOUND&&s=="pending"&&q.by!=me)b.push("<button class=btn onclick=\"Q.approve("+a+")\">Approve</button>","<button class='btn g' onclick=\"Q.changes("+a+")\">Ask for changes</button>");
+ b.push("<button class='btn g' onclick='Q.pdfEdit()'>"+(["approved","sent","accepted","declined"].indexOf(s)>=0?"Download PDF":"Preview PDF")+"</button>");
+ if(q.by==me&&s=="approved")b.push("<button class='btn g' onclick=\"Q.mark("+a+",'sent')\">Mark as sent</button>");
+ if(q.by==me&&s=="sent")b.push("<button class='btn g' onclick=\"Q.mark("+a+",'accepted')\">Client accepted</button>","<button class='btn g' onclick=\"Q.mark("+a+",'declined')\">Client declined</button>");
+ if(q.by==me&&mine()[q.id])b.push("<button class='btn g' onclick='Q.dup()'>Duplicate</button>");
+ if(q.by==me&&mine()[q.id]&&["draft","changes","pending"].indexOf(s)>=0)b.push("<button class='btn g' onclick='Q.del()'>Delete</button>");
+ b.push("<button class='btn g' onclick='Q.back()'>Back to list</button>");return b.join("")}
+function v(id){var e=$(id);return e?e.value:""}
+function pull(){if(!EDIT||ro())return totals();var q=EDIT;q.client={name:v("q_cn").trim(),attn:v("q_ca").trim(),contact:v("q_cc").trim(),addr:v("q_cd").trim()};
+ q.no=v("q_no").trim()||q.no;q.date=v("q_dt")||q.date;q.valid=v("q_vu")||q.valid;q.pkg=v("q_pk");q.disc=v("q_ds");q.gst=Number(v("q_gs")||0);q.adv=Math.max(0,Math.min(100,Number(v("q_ad")||50)));
+ q.scope=v("q_sc");q.notes=v("q_nt");document.querySelectorAll("#qt_ed .qi").forEach(function(e){var x=q.items[+e.dataset.i];if(x)x[e.dataset.f]=e.dataset.f=="q"?e.value:e.dataset.f=="r"?(e.value===""?"":Number(e.value)):e.value});totals()}
+function totals(){var q=EDIT,S=sums(q);q.items.forEach(function(x,i){var c=$("qa_"+i);if(c)c.textContent=x.r===""||x.r==null?"Included":money(Number(x.q||0)*Number(x.r||0))});
+ $("q_tot").innerHTML="<div class=kv><span class=mono>Subtotal</span><b>"+money(S.sub)+"</b></div><div class=kv><span class=mono>Discount</span><b>"+(S.disc?money(S.disc):"—")+"</b></div><div class=kv><span class=mono>GST</span><b>"+(Number(q.gst)?money(S.tax)+" ("+q.gst+"%)":"Nil")+"</b></div><div class=kv><span class=mono>Total</span><b style='font-size:18px'>₹"+money(S.tot)+"</b></div><p class=sm style='text-align:right'>"+esc(inWords(S.tot))+"</p>"}
+function addRow(){pull();EDIT.items.push({s:"",d:"",q:1,r:""});form()}
+function delRow(i){pull();EDIT.items.splice(i,1);form()}
+function check(q){if(!q.client.name)return"Add the client’s name.";if(!q.items.some(function(x){return x.s.trim()}))return"Add at least one service.";if(q.valid<q.date)return"“Valid until” is before the quote date.";
+ var dup=Object.keys(mine()).some(function(i){return i!=q.id&&mine()[i].no==q.no});if(dup)return"Another of your quotes already uses "+q.no+". Change the quote number.";return""}
+function saveQ(mode){pull();var q=EDIT,m=$("q_msg");q.items=q.items.filter(function(x,i){return x.s.trim()||x.d.trim()||i==0});
+ if(mode){var e=check(q);if(e){m.style.color="var(--bad)";m.textContent=e;return}}
+ q.up=new Date().toISOString();if(mode=="submit"||mode=="approve")q.sub=fp(q);mine()[q.id]=JSON.parse(JSON.stringify(q));save();
+ if(mode=="approve"){setOk(q,"ok","");toast("Approved",q.no+" is approved. Download the PDF and send it.",null,"c-mint")}
+ else if(mode=="submit"){toast("Sent for approval",q.no+" is waiting for the founder.",null,"c-mint")}
+ else toast("Saved",q.no+" saved as a draft.",null,"c-mint");form()}
+function setOk(q,st,note){var o=JSON.parse(JSON.stringify(ld("ems_cfg_qok",{})||{}));o[keyOf(q)]={h:fp(q),st:st,note:note||"",by:me,at:new Date().toISOString()};sv("ems_cfg_qok",o)}
+function approve(key){var q=find(key);if(!q)return;if(state(q)!="pending"){toast("Already handled",q.no+" is not waiting for approval any more.",null);return}setOk(q,"ok","");toast("Approved",q.no+" for "+(q.client.name||"")+" is approved.",null,"c-mint");if(EDIT)EDIT=null;draw()}
+function changes(key){var q=find(key);if(!q)return;ask({k:"_ Quotation "+q.no,t:"What should change?",ok:"Send back",body:"<label for=m_in>Tell "+esc(nm(q.by))+" what to fix</label><textarea id=m_in rows=4 placeholder='e.g. Reduce reels to 8 and add the travel cost.'></textarea>",
+ onOk:function(){var t=$("m_in").value.trim();if(t.length<4)return"Write what should change.";setOk(q,"changes",t);if(EDIT)EDIT=null;setTimeout(draw,0)}})}
+function mark(key,res){var q=find(key);if(!q||q.by!=me)return;var x=mine()[q.id];if(res=="sent")x.sent=new Date().toISOString();else x.res=res;x.up=new Date().toISOString();save();
+ if(x.lead&&x.lead.id){try{SB.from("lead_activities").insert({lead_id:x.lead.id,employee_id:SESS.id,activity_type:"note",notes:"Quotation "+x.no+" "+(res=="sent"?"sent":res=="accepted"?"accepted by the client":"declined by the client")+" · ₹"+money(sums(x).tot)}).then(function(){})}catch(e){}}
+ toast("Updated",x.no+(res=="sent"?" marked as sent.":res=="accepted"?" accepted. Well done.":" marked as declined."),null,"c-mint");EDIT=JSON.parse(JSON.stringify(x));form()}
+function dup(){var c=JSON.parse(JSON.stringify(EDIT));c.id=rid();c.no=nextNo();c.at=new Date().toISOString();c.up=null;c.sub=null;c.sent=null;c.res=null;c.by=me;var t=k(new Date());c.date=t;c.valid=addDays(t,15);EDIT=c;form();toast("Copy made","Edit it and send it for approval.",null,"c-mint")}
+function del(){var q=EDIT;ask({k:"_ Delete",t:"Delete "+q.no+"?",ok:"Delete",body:"<p class=note>This draft is removed for good.</p>",onOk:function(){delete mine()[q.id];save();EDIT=null;setTimeout(draw,0)}})}
+function back(){EDIT=null;$("qt_ed").innerHTML="";draw()}
+async function leadsFill(){var s=$("q_lead");if(!s)return;try{if(!LEADL){var r=await SB.from("leads").select("id,lead_code,service_interests,company:companies(name,city),contact:contacts(full_name,phone_e164,email)").not("status","in","(closed_lost,invalid,suppressed)").order("created_at",{ascending:false}).limit(300);if(r.error)throw r.error;LEADL=r.data||[]}s.innerHTML="<option value=''>"+(EDIT.lead?esc(EDIT.lead.code)+" · linked":"Pick a lead from the CRM…")+"</option>"+LEADL.map(function(l,i){return"<option value="+i+">"+esc(((l.company||{}).name||"")+" · "+l.lead_code)+"</option>"}).join("")}catch(e){s.disabled=true}}
+function fromLead(){var i=$("q_lead").value;if(i===""||!LEADL)return;var l=LEADL[+i],c=l.company||{},p=l.contact||{};pull();
+ EDIT.lead={id:l.id,code:l.lead_code};EDIT.client={name:c.name||"",attn:p.full_name||"",contact:p.email||p.phone_e164||"",addr:c.city||""};
+ if(!EDIT.items.some(function(x){return x.s.trim()})&&(l.service_interests||[]).length)EDIT.items=(l.service_interests||[]).map(function(x){return{s:x,d:"",q:1,r:""}});form()}
+
+/* ---------- the PDF: the five-page RPS quotation, printed from the browser ---------- */
+function pdf(key){var q=find(key);if(q)print(q)}
+function pdfEdit(){pull();print(EDIT)}
+function print(q){var s=state(q),ok=["approved","sent","accepted","declined"].indexOf(s)>=0,S=sums(q),e=esc,d=function(x){return x?new Date(x+"T00:00").toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}):""};
+ var logo="<div class=lg><b>rock</b><span>papers</span><b>scissors</b></div>",foot=function(n){return"<div class=ft><span>rockpapersscissors.in</span><span>0"+n+" / 05</span></div>"},
+  head=function(t){return"<div class=hd>"+logo+"<span class=mono>"+t+"</span></div>"},adv=Number(q.adv||50);
+ var rows=q.items.filter(function(x){return x.s||x.d}).map(function(x,i){var inc=x.r===""||x.r==null;return"<tr><td class=mono>"+String(i+1).padStart(2,"0")+"</td><td><b>"+e(x.s)+"</b>"+(x.d?"<br><span class=dd>"+e(x.d)+"</span>":"")+"</td><td class=c>"+e(x.q)+"</td><td class=r>"+(inc?"Included":money(x.r))+"</td><td class=r>"+(inc?"Included":money(Number(x.q||0)*Number(x.r||0)))+"</td></tr>"}).join("");
+ var html="<!doctype html><html><head><meta charset=utf-8><title>"+e(q.no)+" · "+e(q.client.name)+"</title><link href='https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500&family=Host+Grotesk:wght@300;400;600&display=swap' rel=stylesheet><style>"+
+ "@page{size:A4;margin:0}*{box-sizing:border-box;margin:0;padding:0}body{background:#888;font:400 10.5px/1.5 Geist,system-ui,sans-serif;color:#121212;-webkit-print-color-adjust:exact;print-color-adjust:exact}"+
+ ".bar{position:sticky;top:0;z-index:9;display:flex;gap:12px;align-items:center;justify-content:center;padding:12px;background:#111;color:#fff;font:500 13px Geist}.bar button{font:600 13px Geist;padding:9px 18px;border-radius:99px;border:0;background:#E10600;color:#fff;cursor:pointer}.bar .w{color:#F5B83D}"+
+ ".pg{width:210mm;min-height:297mm;margin:16px auto;background:#F0EFEB;padding:18mm 16mm 14mm;position:relative;display:flex;flex-direction:column;page-break-after:always;overflow:hidden}.pg:last-child{page-break-after:auto}"+
+ ".lg{display:flex;flex-direction:column;line-height:.95;font-family:'Host Grotesk',Geist;letter-spacing:-.02em}.lg b{font-weight:800;font-family:Geist}.lg span{font-weight:300}.hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14mm}.hd .lg{font-size:17px}"+
+ ".mono{font:500 7.5px 'Geist Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#555}h1{font:800 34px/1 Geist;letter-spacing:-.04em;margin-bottom:10px}h1 i{font-style:normal;font-weight:300}h1 em{color:#E10600;font-style:normal}"+
+ ".ft{margin-top:auto;padding-top:10px;border-top:1px solid #cfcdc7;display:flex;justify-content:space-between;font:500 7.5px 'Geist Mono';letter-spacing:.12em;color:#666}"+
+ ".big{font:800 92px/.9 Geist;letter-spacing:-.05em;margin:auto 0 16mm}.big i{font-weight:300;font-style:normal}.big em{color:#E10600;font-style:normal}"+
+ ".grid{display:grid;gap:6mm}.g3{grid-template-columns:2fr 1fr 1fr}.g4{grid-template-columns:repeat(4,1fr)}.f{border-top:1px solid #bdbab3;padding-top:5px}.f p{font-size:11px;margin-top:4px}"+
+ ".cov .lg{font-size:44px}.cov .mono.r{text-align:right}p.t{font-size:11px;margin-bottom:9px;max-width:150mm}"+
+ "table{width:100%;border-collapse:collapse;margin-top:6mm}th{background:#111;color:#fff;font:500 7.5px 'Geist Mono';letter-spacing:.12em;text-transform:uppercase;text-align:left;padding:7px 8px}td{padding:8px;border-bottom:1px solid #d3d0c9;vertical-align:top;font-size:10.5px}td.c,th.c{text-align:center}td.r,th.r{text-align:right}.dd{color:#666;font-size:9.5px}"+
+ ".box{border:1px solid #bdbab3;padding:8px 10px;min-height:16mm;font-size:10px;white-space:pre-wrap}.tot div{display:flex;justify-content:space-between;padding:5px 8px;border-bottom:1px solid #d3d0c9}.tot .T{background:#111;color:#fff;font-weight:700;font-size:13px;padding:9px 8px;border:0}"+
+ ".terms{columns:2;column-gap:9mm;font-size:8.6px;line-height:1.45}.terms h4{font:600 9.5px Geist;margin:7px 0 2px;break-after:avoid}.terms li{margin:0 0 2px 10px}"+
+ ".sv{display:grid;grid-template-columns:42mm 1fr 1fr;gap:5mm 6mm;border-top:1px solid #bdbab3;padding-top:5mm;margin-top:5mm}.sv h3{font:800 20px Geist;letter-spacing:-.03em}.sv b{font-size:10.5px}.sv p{font-size:9px;color:#444}"+
+ ".dr{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:5}.dr span{font:800 120px Geist;color:rgba(225,6,0,.13);transform:rotate(-30deg)}"+
+ "@media print{body{background:none}.bar{display:none}.pg{margin:0;box-shadow:none}}</style></head><body>"+
+ "<div class=bar>"+(ok?"<span>"+e(q.no)+" is approved.</span><button onclick='print()'>Save as PDF</button><span style='opacity:.7'>In the print window, choose “Save as PDF”.</span>":"<span class=w>Draft preview: not approved yet. Don’t send this to the client.</span>")+"</div>"+(ok?"":"<div class=dr><span>DRAFT</span></div>")+
+ /* 1 cover */
+ "<section class='pg cov'><div class=hd>"+logo+"<div class='mono r'>Quotation<br>Marketing agency · Bengaluru, India</div></div><div class=big>raw <i>to</i><br>reality<em>.</em></div>"+
+ "<div class='grid g3' style='margin-bottom:12mm'><div class=f><span class=mono>Prepared for</span><p><b>"+e(q.client.name)+"</b>"+(q.client.attn?" · "+e(q.client.attn):"")+"</p></div><div class=f><span class=mono>Quote no.</span><p>"+e(q.no)+"</p></div><div class=f><span class=mono>Date</span><p>"+d(q.date)+"</p></div></div>"+
+ "<div class='grid g4'><div class=f><span class=mono>Company</span><p>Rock Papers Scissors</p></div><div class=f><span class=mono>Phone</span><p>+91 63620 12456</p></div><div class=f><span class=mono>Email</span><p>info@rockpapersscissors.in</p></div><div class=f><span class=mono>Website</span><p>rockpapersscissors.in</p></div></div>"+
+ "<div class=f style='margin-top:5mm'><span class=mono>Address</span><p>No. 58/59, 1st Cross, B Cross, Bannerghatta Road, Doresanipalya, Bilekahalli, Bengaluru, Karnataka 560076</p></div>"+foot(1)+"</section>"+
+ /* 2 cover letter */
+ "<section class=pg>"+head("Cover letter")+"<h1>let’s <i>make it</i> real<em>.</em></h1><p class=t style='margin-top:8mm'>Dear "+e(q.client.attn||q.client.name)+",</p><p class=t>Thank you for considering Rock Papers Scissors for this work.</p>"+
+ "<p class=t>Rock Papers Scissors is a marketing agency in Bengaluru. We take ideas from raw to reality. Our name is our process: we carve the idea, draw the plan and cut it into reality. Strategy, creative and execution sit under one roof, so nothing gets lost between the idea and the launch.</p>"+
+ "<p class=t>This document sets out what we will do, what it costs and the terms we work on. The quotation is on page 4 and the terms and conditions are on page 5. Please read both and tell us if anything should change before we start.</p>"+
+ "<p class=t>To go ahead, sign the acceptance on the last page and send it to info@rockpapersscissors.in. We will then confirm the start date and your point of contact.</p><p class=t style='margin-top:6mm'>Sincerely,<br><b>Team Rock Papers Scissors</b></p>"+
+ "<div style='margin-top:auto;margin-bottom:6mm'><span class=mono>How we work · four rules</span><div class='grid g4' style='margin-top:4mm'>"+[["Start raw","Bring us the messy version of your idea. That is usually where the good part is."],["Put it on paper","Every project gets a written plan before work starts, so everyone knows what done looks like."],["Cut the noise","Fewer, sharper ideas. Anything that does not move the brief gets cut."],["Stay in the loop","Weekly check-ins and one point of contact from the first call to launch day."]].map(function(x){return"<div class=f><b>"+x[0]+"</b><p style='font-size:9px'>"+x[1]+"</p></div>"}).join("")+"</div></div>"+foot(2)+"</section>"+
+ /* 3 services */
+ "<section class=pg>"+head("Services · 11")+"<h1>three <i>moves.</i> every <i>brief</i><em>.</em></h1><p class=t>Strategy, creative and execution under one roof. Every brief moves through all three, so nothing gets lost between the idea and the launch.</p>"+
+ [["01 · Strategy","carve.","Find the idea worth building.",[["01","Brand consultancy","Positioning, naming and a clear brand direction your whole team can follow."]]],
+  ["02 · Creative","draw.","Shape it into something people want.",[["02","Content creation","Posts, reels, copy and design, produced month after month in one voice."],["03","TV commercials & ad shoots","TV commercials, ad films and product shoots, from script to final cut."],["04","2D & 3D animation","Explainers, product renders and motion graphics in 2D and 3D."],["05","Website design & development","Fast, good-looking websites, designed and built end to end."],["06","UI/UX design","Research, wireframes and interfaces people understand at first tap."],["07","Mobile app development","iOS and Android apps, from first prototype to store launch."]]],
+  ["03 · Execution","cut.","Launch it and make it land.",[["08","Social media marketing","Strategy, calendars, community and growth on every platform that matters."],["09","Performance marketing","Meta and Google ads run against clear targets and tuned every week."],["10","Influencer marketing","Creators matched to your audience, briefed well and measured properly."],["11","Sales enablement","Pitch decks, sales collateral and outreach systems that help your team close."]]]].map(function(g){
+  return"<div class=sv><div><span class=mono>"+g[0]+"</span><h3>"+g[1]+"</h3><p>"+g[2]+"</p></div>"+g[3].map(function(x,i){return"<div"+(g[3].length==1?" style='grid-column:span 2'":"")+"><b><span class=mono style='margin-right:6px'>"+x[0]+"</span>"+x[1]+"</b><p>"+x[2]+"</p></div>"+(i%2==1&&i<g[3].length-1?"<div></div>":"")}).join("")+"</div>"}).join("")+foot(3)+"</section>"+
+ /* 4 quotation */
+ "<section class=pg><div class=hd>"+logo+"<div style='text-align:right'><h1 style='font-size:40px;margin:0'>quotation<em>.</em></h1><span class=mono>Marketing agency · Bengaluru, India</span></div></div>"+
+ "<div class='grid g3' style='grid-template-columns:1fr 1fr 1fr'><div class=f><span class=mono>Quote no.</span><p>"+e(q.no)+"</p></div><div class=f><span class=mono>Date</span><p>"+d(q.date)+"</p></div><div class=f><span class=mono>Valid until</span><p>"+d(q.valid)+"</p></div></div>"+
+ "<div class=grid style='grid-template-columns:1fr 1fr;margin-top:6mm'><div><span class=mono>From</span><p style='margin-top:4px'><b>Rock Papers Scissors</b><br>No. 58/59, 1st Cross, B Cross, Bannerghatta Road,<br>Doresanipalya, Bilekahalli, Bengaluru, Karnataka 560076<br>+91 63620 12456<br>info@rockpapersscissors.in</p></div>"+
+ "<div><span class=mono>Quotation for</span><p style='margin-top:4px'><b>"+e(q.client.name)+"</b>"+(q.client.attn?"<br>Attn. "+e(q.client.attn):"")+(q.client.addr?"<br>"+e(q.client.addr):"")+(q.client.contact?"<br>"+e(q.client.contact):"")+"</p></div></div>"+
+ "<table><thead><tr><th style='width:9%'>No.</th><th>Service</th><th class=c style='width:9%'>Qty</th><th class=r style='width:16%'>Rate (INR)</th><th class=r style='width:17%'>Amount (INR)</th></tr></thead><tbody>"+rows+"</tbody></table>"+
+ (q.scope?"<div style='margin-top:6mm'><span class=mono>Scope and deliverables</span><div class=box style='margin-top:4px'>"+e(q.scope)+"</div></div>":"")+
+ "<div class=grid style='grid-template-columns:1.3fr 1fr;margin-top:6mm;align-items:start'><div><span class=mono>Amount in words</span><div class=box style='margin:4px 0 5mm;min-height:0'>"+e(inWords(S.tot))+"</div><span class=mono>Notes</span><div class=box style='margin-top:4px'>"+e(q.notes||"")+"</div></div>"+
+ "<div class=tot><div><span class=mono>Subtotal</span><span>"+money(S.sub)+"</span></div><div><span class=mono>Discount</span><span>"+(S.disc?money(S.disc):"—")+"</span></div><div><span class=mono>Taxes</span><span>"+(Number(q.gst)?"GST "+q.gst+"% · "+money(S.tax):"Nil")+"</span></div><div class=T><span>Total</span><span>₹"+money(S.tot)+"</span></div></div></div>"+foot(4)+"</section>"+
+ /* 5 terms */
+ "<section class=pg>"+head("Terms and conditions")+"<h1>terms <i>and</i> conditions<em>.</em></h1><p class=t>These terms apply to the work in this quotation. Accepting the quotation means accepting these terms.</p><div class=terms>"+
+ [["01 Scope and price",["This quotation covers only the work listed on the quotation page.","The final price depends on the agreed scope, deliverables and number of revisions, and changes if any of these change.","The estimate covers design and marketing work only. Third-party costs such as media spend, printing, stock assets, licences, travel, locations and talent are charged extra unless they are listed.","Work outside the agreed scope, and changes asked for after a design is approved, are quoted and charged separately."]],
+  ["02 Payment",[adv+"% of the total is paid in advance to confirm the order. The remaining "+(100-adv)+"% is due on approval of the final work or on completion, whichever comes first.","Late payments attract interest at 9.5% a year.","Payments are made only to the company account of Rock Papers Scissors. We do not accept cash or payments to any other account.","Prices exclude applicable taxes, which are added to the invoice."]],
+  ["03 Timelines",["We share the completion date before work starts and tell you in advance if it needs to move.","Dates depend on briefs, content, feedback and approvals reaching us on time. A delay in any of these moves the delivery date by the same amount."]],
+  ["04 Approvals and revisions",["The number of revision rounds is stated in the scope. Further rounds are charged extra.","Requests for changes or extra work are sent in writing to info@rockpapersscissors.in.","A written approval is final. Changes after approval count as new work."]],
+  ["05 Websites and apps",["Before we start, you give us access to the server, the domain and any existing accounts.","While we are working, no one else should change the site or app.","We are not responsible for problems caused by changes made by others.","For security we change all passwords during the project and hand the new ones to you on delivery."]],
+  ["06 Quality and support",["We deliver the work to a professional standard and as described in the scope.","Support and maintenance after delivery are charged separately and requested through info@rockpapersscissors.in."]],
+  ["07 Ownership and use",["The final approved work becomes yours once full payment is received. Until then it stays with Rock Papers Scissors.","We may show the finished work in our portfolio unless you ask us in writing not to."]],
+  ["08 Cancellation",["If the project is cancelled after work has started, the advance is not refunded and work completed up to that date is billed."]],
+  ["09 General",["This quotation is valid until the date shown on it.","Both sides keep each other’s confidential information private.","Any dispute is subject to the courts of Bengaluru, Karnataka."]]].map(function(t){return"<h4>"+t[0]+"</h4><ul>"+t[1].map(function(x){return"<li>"+x+"</li>"}).join("")+"</ul>"}).join("")+"</div>"+
+ "<div class=grid style='grid-template-columns:1fr 1fr;margin-top:auto;gap:12mm'><div><span class=mono>Accepted by the client</span><div class=f style='margin-top:14mm'><span class=mono>Signature</span></div><div class=grid style='grid-template-columns:1fr 1fr;margin-top:8mm'><div class=f><span class=mono>Name</span></div><div class=f><span class=mono>Date</span></div></div></div>"+
+ "<div><span class=mono>For Rock Papers Scissors</span><div class=f style='margin-top:14mm'><span class=mono>Authorised signatory</span></div><p style='margin-top:8mm;font-size:9.5px'>Questions, or something you want changed? Write to info@rockpapersscissors.in or call +91 63620 12456.</p><p style='text-align:right;font:800 15px Geist;margin-top:4mm'>raw <span style='font-weight:300'>to</span> reality<span style='color:#E10600'>.</span></p></div></div>"+foot(5)+"</section></body></html>";
+ var w=window.open("","_blank");if(!w){toast("Pop-up blocked","Allow pop-ups for the portal to open the PDF.",null,"c-amber");return}w.document.open();w.document.write(html);w.document.close()}
+
+return{live:function(){if(!EDIT)draw()},draw:draw,newQ:newQ,open:open,pull:pull,addRow:addRow,delRow:delRow,save:saveQ,approve:approve,changes:changes,mark:mark,dup:dup,del:del,back:back,pdf:pdf,pdfEdit:pdfEdit,fromLead:fromLead,can:canQuote,
+ seg:function(f){QF=f;EDIT=null;$("qt_ed").innerHTML="";draw()},_t:{inWords:inWords,sums:sums,fp:fp}}})();
+R.squote=function(){var s=$("qt_seg");if(s&&!s.dataset.on){s.dataset.on=1;s.querySelectorAll("button").forEach(function(b){b.onclick=function(){s.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x==b)});Q.seg(b.dataset.f)}})}Q.draw()};
+
+R.hlog=function(){var today=k(new Date()),all=staff();
+ if(!$("lg_d").value)$("lg_d").value=today;var day=$("lg_d").value,es=$("lg_e"),ev=es.value,now=new Date();
+ es.innerHTML="<option value=''>Everyone</option>"+all.map(function(id){return"<option value=\""+esc(id)+"\">"+esc(U[id].name)+"</option>"}).join("");es.value=ev;
+ var seen=0,late=0,noOut=0,away=0,rows=[],fmtH=function(ms){var m=Math.round(ms/6e4);return Math.floor(m/60)+"h "+String(m%60).padStart(2,"0")+"m"};
+ all.forEach(function(id){if(ev&&id!=ev)return;var d=ld("ems_d_"+id,{})||{},L=(d.log&&d.log[day])||[],A=d.att&&d.att[day],S=A?A.s:[],lv=(d.leaves||[]).filter(function(x){return x.st!="rejected"&&x.f<=day&&x.to>=day})[0];
+  var fl=[],inT=L.length?L[0].in:null,lastL=L[L.length-1],outT=lastL?(lastL.out||lastL.last):null,live=lastL&&!lastL.out&&now-new Date(lastL.last)<LOGGAP&&day==today;
+  var pMs=L.reduce(function(a,x){return a+(new Date(x.out||x.last)-new Date(x.in))},0),wMs=A?dayMs(A,now):0;
+  if(L.length)seen++;
+  if(S.length){var f=new Date(S[0].i);if(f.getHours()*60+f.getMinutes()>LATE){fl.push("<span class='tag c-amber'>Late</span>");late++}
+   var lp=S[S.length-1];if(lp.auto){fl.push("<span class='tag c-fire'>No punch out</span>");noOut++}
+   else if(lp.o&&wMs<8*36e5&&day<today)fl.push("<span class='tag c-amber'>Short day</span>")}
+  if(L.length&&!L.some(function(x){return x.out})&&!live)fl.push("<span class='tag c-ion'>Closed without logout</span>");
+  if(!L.length&&!S.length){if(lv)fl.push("<span class='tag c-violet'>On leave</span>");else{fl.push("<span class='tag c-fire'>Not seen</span>");away++}}
+  var ses=L.length>1?"<br><span class=sm>"+L.length+" sign-ins · "+L.map(function(x){return tm(x.in)+"–"+(x.out?tm(x.out):tm(x.last))}).join(", ")+"</span>":(L[0]?"<br><span class=sm>"+esc(L[0].dev||"")+"</span>":"");
+  rows.push("<tr><td><b>"+esc(U[id].name)+"</b><br><span class=sm>"+esc(id)+" · "+esc(U[id].role||"")+"</span></td>"+
+   "<td>"+(inT?tm(inT):"<span class=sm>–</span>")+ses+"</td>"+
+   "<td>"+(live?"<span class='tag c-mint'>In the portal now</span>":outT?tm(outT)+(lastL.out?"":" <span class=sm>(closed)</span>"):"<span class=sm>–</span>")+"</td>"+
+   "<td class=n>"+(L.length?fmtH(pMs):"–")+"</td>"+
+   "<td>"+(S.length?tm(S[0].i):"<span class=sm>–</span>")+"</td>"+
+   "<td>"+(S.length?(S[S.length-1].o?tm(S[S.length-1].o):"<span class='tag c-mint'>On shift</span>"):"<span class=sm>–</span>")+"</td>"+
+   "<td class=n>"+(A?fmtH(wMs):"–")+"</td><td>"+fl.join(" ")+"</td></tr>")});
+ $("lg_k").innerHTML=kt("c-ion","◉",seen,"Signed in on "+dl(day))+kt(late?"c-amber":"c-mint","◷",late,"Punched in late")+kt(noOut?"c-fire":"c-mint","■",noOut,"Forgot to punch out")+kt(away?"c-fire":"c-mint","?",away,"Not seen, no leave");
+ $("lg_tb").innerHTML=rows.join("")||"<tr><td colspan=8 class=emp>Nobody to show.</td></tr>"};
 R.hloc=function(){var X=xs(),today=k(new Date()),O=office(),all=staff();
  if(!$("lc_d").value)$("lc_d").value=today;var day=$("lc_d").value,es=$("lc_e"),ev=es.value;
  es.innerHTML="<option value=''>Everyone</option>"+all.map(function(id){return"<option value=\""+esc(id)+"\">"+esc(U[id].name)+"</option>"}).join("");es.value=ev;
