@@ -3,7 +3,7 @@
   "appName": "Rock Papers Scissors",
   "webDir": "www",
   "server": {
-    "url": "https://brucerps.github.io/rps-portal/?source=app",
+    "url": "https://brucerps.github.io/rps-portal/index.html?source=app",
     "allowNavigation": [
       "brucerps.github.io",
       "portal.rockpapersscissors.in",
