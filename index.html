@@ -258,9 +258,6 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--ion);outline-offset
 
 /* ---------- premium pass: one accent (RPS red), quiet glass everywhere else ---------- */
 :root{--c-ion:#A3AAB8;--c-mint:#93B8A2;--c-amber:#C8A46E;--c-violet:#A9A3BA;--c-cyan:#98AFB8;--c-fire:#E5484D;--ok:#93B8A2;--bad:#E5484D}
-html,body{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='M2.5 8.5 20.4 14.5M8.5 2.5 14.5 20.4' stroke='%2305060A' stroke-width='4.4'/%3E%3Ccircle cx='24.3' cy='16' r='4.1' stroke='%2305060A' stroke-width='4.4'/%3E%3Ccircle cx='16' cy='24.3' r='4.1' stroke='%2305060A' stroke-width='4.4'/%3E%3Cpath d='M2.5 8.5 20.4 14.5M8.5 2.5 14.5 20.4' stroke='%23F2F1EC' stroke-width='2.1'/%3E%3Ccircle cx='24.3' cy='16' r='4.1' stroke='%23F2F1EC' stroke-width='2.1'/%3E%3Ccircle cx='16' cy='24.3' r='4.1' stroke='%23F2F1EC' stroke-width='2.1'/%3E%3C/g%3E%3Ccircle cx='11.6' cy='11.6' r='2' fill='%23E10600' stroke='%2305060A' stroke-width='.8'/%3E%3C/svg%3E") 5 5,auto}
-a,button,select,label,summary,[onclick],.btn,.stat.go,.tkt,.lbtn,.seg button,aside a{cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='M2.5 8.5 20.4 14.5M8.5 2.5 14.5 20.4' stroke='%2305060A' stroke-width='4.4'/%3E%3Ccircle cx='24.3' cy='16' r='4.1' stroke='%2305060A' stroke-width='4.4'/%3E%3Ccircle cx='16' cy='24.3' r='4.1' stroke='%2305060A' stroke-width='4.4'/%3E%3Cpath d='M2.5 8.5 20.4 14.5M8.5 2.5 14.5 20.4' stroke='%23E10600' stroke-width='2.1'/%3E%3Ccircle cx='24.3' cy='16' r='4.1' stroke='%23E10600' stroke-width='2.1'/%3E%3Ccircle cx='16' cy='24.3' r='4.1' stroke='%23E10600' stroke-width='2.1'/%3E%3C/g%3E%3Ccircle cx='11.6' cy='11.6' r='2' fill='%23E10600' stroke='%2305060A' stroke-width='.8'/%3E%3C/svg%3E") 5 5,pointer}
-input,textarea,[contenteditable]{cursor:text}.btn[disabled]{cursor:not-allowed}
 .card{background:rgba(14,16,22,.55);border-color:rgba(214,222,238,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
 .stat,.stat.c-ion,.stat.c-mint,.stat.c-amber,.stat.c-violet,.stat.c-cyan,.stat.c-fire{background:rgba(14,16,22,.55);border-color:rgba(214,222,238,.08)}
 .stat::after{display:none}.stat:hover{transform:translateY(-2px)}
@@ -277,6 +274,21 @@ aside a.on{background:rgba(255,255,255,.05);box-shadow:inset 2px 0 0 var(--fire)
 .mf-nd{background:rgba(255,255,255,.03);border-color:rgba(214,222,238,.12)}
 .bar i{box-shadow:none}
 .av{background:var(--fire)}.maya-av{background:var(--fire)}
+
+/* the website's cursor: a small pair of scissors that snips as it moves and cuts where you click (mouse / trackpad only) */
+.cs{overflow:visible;display:block}
+.cs .bl{fill:var(--white);stroke:rgba(5,6,10,.85);stroke-width:.9;stroke-linejoin:round}
+.cs .sh{fill:none;stroke:var(--fire);stroke-width:3.6;stroke-linecap:round}
+.cs .rg{fill:none;stroke:var(--fire);stroke-width:3.2}
+.cs .pv{fill:#05060A;stroke:var(--white);stroke-width:1}
+html.has-cur,html.has-cur *{cursor:none!important}
+html.has-cur input:not([type=checkbox]):not([type=radio]),html.has-cur textarea,html.has-cur select,html.has-cur [contenteditable]{cursor:text!important}
+#cur{position:fixed;left:0;top:0;z-index:10000;pointer-events:none;opacity:0;transition:opacity .2s;will-change:transform}
+#cur.on{opacity:1}#cur.txt{opacity:0}
+#cur svg{width:40px;height:auto;transform-origin:0 0;transform:rotate(-135deg) translate(-37.9px,-9.1px);filter:drop-shadow(0 3px 6px rgba(0,0,0,.7));transition:width .25s}
+#cur.hot svg{width:48px;transform:rotate(-135deg) translate(-45.5px,-10.9px)}
+.cut-mark{position:fixed;z-index:9999;pointer-events:none;width:34px;height:2px;margin:-1px 0 0 -17px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--fire) 30%,var(--white) 50%,var(--fire) 70%,transparent);transform:rotate(var(--r)) scaleX(0);animation:cutMark .85s cubic-bezier(.2,.8,.2,1) forwards;box-shadow:0 0 8px rgba(225,6,0,.8)}
+@keyframes cutMark{0%{transform:rotate(var(--r)) scaleX(0);opacity:1}35%{transform:rotate(var(--r)) scaleX(1);opacity:1}100%{transform:rotate(var(--r)) scaleX(1.15);opacity:0}}
 </style>
 <canvas id="space"></canvas>
 
@@ -2073,5 +2085,30 @@ document.addEventListener("keydown",function(e){if(e.target&&e.target.id=="mayaI
  <form class="mb-in" onsubmit="mayaSend(event)"><textarea id="mayaIn" rows="1" maxlength="2000" placeholder="Ask Maya…" aria-label="Message Maya"></textarea><button class="btn s" id="mayaGo">Send</button></form>
 </div>
 
+<script>
+/* scissors cursor, the same one as rockpapersscissors.in */
+(function(){if(!window.matchMedia||!matchMedia("(hover: hover) and (pointer: fine)").matches)return;
+ var reduce=matchMedia("(prefers-reduced-motion: reduce)").matches,root=document.documentElement;
+ var ARM='<path class="bl" d="M28 15.2 L61.5 13.2 Q63.4 14.4 61 16.2 L28 18.6 Z"/><path class="sh" d="M31 17.4 L14.5 22.6"/><circle class="rg" cx="9.6" cy="24" r="5.6"/>';
+ var cur=document.createElement("div");cur.id="cur";cur.setAttribute("aria-hidden","true");
+ cur.innerHTML='<svg class="cs" viewBox="-2 0 68 34" aria-hidden="true" focusable="false"><g class="a1">'+ARM+'</g><g class="a2" transform="translate(0 32) scale(1 -1)">'+ARM+'</g><circle class="pv" cx="30" cy="16" r="2.1"/></svg>';
+ document.body.appendChild(cur);root.classList.add("has-cur");
+ var svg=cur.querySelector("svg"),a1=svg.querySelector(".a1"),a2=svg.querySelector(".a2");
+ function setOpen(d){a1.setAttribute("transform","rotate("+(-d).toFixed(2)+" 30 16)");a2.setAttribute("transform","rotate("+d.toFixed(2)+" 30 16) translate(0 32) scale(1 -1)")}
+ var x=-100,y=-100,px=-100,py=-100,travel=0,snip=0,hot=false,shown=false,tf=false,open=18;
+ addEventListener("pointermove",function(e){if(e.pointerType&&e.pointerType!=="mouse"&&e.pointerType!=="pen")return;x=e.clientX;y=e.clientY;
+  if(!shown){shown=true;px=x;py=y;cur.classList.add("on")}var t=e.target;
+  hot=!!(t.closest&&t.closest("a,button,summary,label,[role=button],[onclick],.stat.go,.nit,.tkt,.lbtn,.toast"));
+  tf=!!(t.closest&&t.closest("input:not([type=checkbox]):not([type=radio]),textarea,select,[contenteditable]"))},{passive:true});
+ document.addEventListener("pointerleave",function(){cur.classList.remove("on");shown=false});
+ addEventListener("blur",function(){cur.classList.remove("on");shown=false});
+ addEventListener("pointerdown",function(e){if(e.pointerType!=="mouse"&&e.pointerType!=="pen")return;snip=1;
+  var m=document.createElement("i");m.className="cut-mark";m.style.left=e.clientX+"px";m.style.top=e.clientY+"px";m.style.setProperty("--r",(-35+Math.random()*16).toFixed(1)+"deg");
+  document.body.appendChild(m);setTimeout(function(){m.remove()},900)});
+ function frame(){var dx=x-px,dy=y-py;travel+=Math.hypot(dx,dy);px=x;py=y;snip=Math.max(0,snip-.09);var base=hot?26:16;
+  var target=reduce?base:base*(.45+.55*Math.abs(Math.cos(travel/26)))*(1-Math.sin(Math.min(1,snip)*Math.PI)*.95);open+=(target-open)*.35;setOpen(open);
+  cur.style.transform="translate3d("+x.toFixed(1)+"px,"+y.toFixed(1)+"px,0)";cur.classList.toggle("hot",hot);cur.classList.toggle("txt",tf);requestAnimationFrame(frame)}
+ requestAnimationFrame(frame)})();
+</script>
 </body>
 </html>
