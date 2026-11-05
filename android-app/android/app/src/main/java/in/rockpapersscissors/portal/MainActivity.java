@@ -27,7 +27,7 @@ public class MainActivity extends BridgeActivity {
         // never reuse an old cached redirect: start each launch from a fresh page cache (logins are kept)
         if (getBridge() != null && getBridge().getWebView() != null) {
             getBridge().getWebView().clearCache(true);
-            getBridge().getWebView().loadUrl(getBridge().getServerUrl() != null ? getBridge().getServerUrl() : "https://brucerps.github.io/rps-portal/index.html?source=app");
+            getBridge().getWebView().loadUrl("https://brucerps.github.io/rps-portal/index.html?source=app");
         }
     }
 
