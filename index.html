@@ -938,7 +938,7 @@ return{nav:nav,tabs:tabs,goVer:goVer,goTeam:goTeam,teamDraw:teamDraw,quickAssign
  outcome:outcome,verify:verify,handoff:handoff,note:note,fup:fup,fdone:fdone,fdoneL:fdoneL,stage:stage,lose:lose,assign:assign,meet:meet,met:met,score:score,saveRoles:saveRoles}})();
 
 /* ---------- daily routine: plan at sign-in, report at sign-out, honest hours ---------- */
-var PLANW=100;   /* words needed for the morning plan */
+var PLANW=25;   /* words needed for the morning plan */
 function home(){if(!$("app")||$("app").style.display!="block"){location.reload();return}show(FOUND?"fover":"dash")}
 function planDone(){var t=k(new Date());return !!(D&&D.plan&&D.plan[t])}
 /* a shift left running from an earlier day is closed automatically (at most 9 hours) and flagged for HR */
@@ -955,7 +955,7 @@ function askPlan(){if(!me||planDone()||!$("mdl").hidden)return;var today=k(new D
   after:function(){var f=function(){var n=words($("m_in").value).length,ok=n>=PLANW;$("m_wc").className="wc "+(ok?"ok":"no");$("m_wc").textContent=n+" / "+PLANW+" words"+(ok?" · ready":"");$("m_ok").disabled=!ok};$("m_in").oninput=f;f()},
   onOk:function(){var t=$("m_in").value.trim(),w=words(t),u={};w.forEach(function(x){u[x.toLowerCase()]=1});
    if(w.length<PLANW)return"Write at least "+PLANW+" words. You have "+w.length+".";
-   if(Object.keys(u).length<30)return"The plan repeats the same words. Describe your actual work for today.";
+   if(Object.keys(u).length<15)return"The plan repeats the same words. Describe your actual work for today.";
    var at=new Date().toISOString();D.plan=D.plan||{};D.ses=D.ses||{};D.plan[today]={t:t,w:w.length,at:at};
    (D.ses[today]=D.ses[today]||{}).in=D.ses[today].in||at;STALE=null;save();
    var pi=$("m_pi")&&$("m_pi").checked;setTimeout(function(){if(pi&&!openS())punch();toast("Day started","Plan saved at "+tm(at)+". Have a good one.",null,"c-mint")},0)}})}
