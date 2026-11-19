@@ -1128,8 +1128,8 @@ document.addEventListener("visibilitychange",function(){if(!me)return;logNow("be
 window.addEventListener("pagehide",function(){if(me){logNow("beat");flushAll().catch(function(){})}});
 function bye(){logStop();unplug();MAYAM=[];if($("mayaFab")){$("mayaFab").hidden=true;$("mayaBox").hidden=true}navReset();tClose();$("npanel").hidden=true;$("toasts").innerHTML="";me=null;HRM=false;FOUND=false;PONE=null;$("app").style.display="none";$("auth").style.display="flex";$("amsg").textContent="";$("ef").hidden=true}
 
-/* logout: an employee must file a work report of at least 50 words */
-var MINW=100;
+/* logout: an employee must file a work report of at least 25 words */
+var MINW=25;
 function logout(){if(!me){bye();return}
  var today=k(new Date()),prev=D.rep[today],o=openS(),acts=myToday();
  ask({k:"_ End of session",t:"Work report.",ok:"Submit &amp; log out",
@@ -1140,7 +1140,7 @@ function logout(){if(!me){bye();return}
   after:function(){var f=function(){var w=words($("m_in").value),n=w.length,ok=n>=MINW;$("m_wc").className="wc "+(ok?"ok":"no");$("m_wc").textContent=n+" / "+MINW+" words"+(ok?" · ready":"");$("m_ok").disabled=!ok};$("m_in").oninput=f;f()},
   onOk:function(){var t=$("m_in").value.trim(),w=words(t),u={};w.forEach(function(x){u[x.toLowerCase()]=1});
    if(w.length<MINW)return"Write at least "+MINW+" words. You have "+w.length+".";
-   if(Object.keys(u).length<20)return"The report repeats the same words. Describe your actual work.";
+   if(Object.keys(u).length<15)return"The report repeats the same words. Describe your actual work.";
    D.rep[today]={t:t,w:w.length,at:new Date().toISOString(),n:(prev&&prev.n||0)+1};
    D.ses=D.ses||{};(D.ses[today]=D.ses[today]||{}).out=new Date().toISOString();save();var po=openS();
    setTimeout(async function(){try{await SB.rpc("queue_eod_mail")}catch(e){}if(po){var ok=await punch();await flushAll();if(!ok){ask({k:"_ Still punched in",t:"You’re still punched in.",ok:"OK",noCancel:true,body:"<p class=note>Your work report is saved. Punch out again when you’re ready, then log out.</p>",onOk:function(){}});return}}bye()},0)}})}
